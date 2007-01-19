@@ -27,7 +27,7 @@
 
 /**
  * @defgroup JSR238 JSR238 Mobile Internationalization API (MI18N)
- * @ingroup MSA
+ * @ingroup stack
  * 
  * Porting interface for native implementation Mobile Internationalization API.
  * 
@@ -47,10 +47,6 @@ extern "C" {
 
 #include "javacall_defs.h" 
 
-#define STRING_RESOURCE_TYPE 0x01
-#define BYNARY_RESOURCE_TYPE 0x10
-
-
 /**
  * @defgroup jsrMandatoryResources Low-level device resources porting API
  * @ingroup JSR238
@@ -61,94 +57,70 @@ extern "C" {
  */
 
 /**
- * Gets the number of supported locales for string collation.
- * @param count_out pointer to integer that recieves
- *					the number of supported locales
- * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
+ * Gets the number of supported locales for device resources.
+ *
+ * @return the number of supported locales or 0 if something is wrong
  */
-javacall_result javacall_mi18n_get_resource_locales_count(/*OUT*/int* count_out);
+int javacall_mi18n_get_resource_locales_count();
 
 /**
  * Gets a locale name for device resources for the index.
  *
- * @param locale_index  index of the locale.
- * @param locale_name_out  buffer for the locale.
- * @param plen	pointer to integer initially containing the buffer length
- *				and receiving length of result string in wchars including terminating zero, 
+ * @param loc    buffer for the locale.
+ * @param len    buffer length
+ * @param index  index of the locale.
  * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
- * @note Zero index (neutral locale) must return name - empty string
-*/
-javacall_result javacall_mi18n_get_resource_locale_name(int locale_index, javacall_utf16* locale_name_out,
-														/*IN|OUT*/int* plen);
-
-/**
- * Gets locale index used for accessing device resources by the given miroedition.locale name.
- *
- * @param loc    utf16 string containing requested locale name or null for neutral locale
- * @param index_out	pointer to integer receiving index of requested locale,
- * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
- * @note Neutral (empty string) locale must be supported. It must have index 0
+ *         JAVACALL_FAIL otherwise
  */
-javacall_result javacall_mi18n_get_resource_locale_index(const javacall_utf16* locale, /*OUT*/int* index_out);
-
+javacall_result javacall_mi18n_get_resource_locale(char* loc, int len, int index);
 
 /**
- * Gets a resource data for pointed reource identifier and locale.
- * String resources must be UTF8 encoded
+ * Gets a resource for pointed reource identifier and locale.
  *
- * @param locale_index  index of the locale.
- * @param resource_id   resource identifier.
  * @param resource      buffer for the resource.
- * @param offset	offset of first byte of resource data 
- * @param length	pointer to integer that set to desired number of bytes to copy from resource data
- *					receiving length of copied resource data in bytes, 
- *					if length is less than remaining resource size only length bytes are copied		
+ * @param res_len       length of the resource buffer.
+ * @param resource_id   resource identifier.
+ * @param locale_index  index of the locale.
  * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
+ *         JAVACALL_FAIL otherwise
  */
-javacall_result javacall_mi18n_get_resource(int locale_index, int resource_id,
-											/* OUT */char* resource, int offset, /*IN|OUT*/ int* length);
+javacall_result javacall_mi18n_get_resource(char* resource, int res_len, 
+                                         int resource_id, int locale_index);
 
 /**
  * Gets a resource type for pointed resource identifier and locale.
  *
- * @param locale_index  index of the locale.
+ * @param resType  resource type.
  * @param resource_id   resource identifier.
- * @param resType	pointer to integer receiving the type of resource, can be either
-					STRING_RESOURCE_TYPE or BYNARY_RESOURCE_TYPE
+ * @param locale_index  index of the locale.
  * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
+ *         JAVACALL_FAIL otherwise
  */
-javacall_result javacall_mi18n_get_resource_type(int locale_index,int resource_id,
-												 /* OUT */int* resType );
+javacall_result javacall_mi18n_get_resource_type(int* resType /* OUT */, 
+                                         int resource_id, int locale_index);
 
 /**
  * Checks if resource with given identifier exists.
  *
- * @param locale_index  index of the locale.
  * @param resource_id   resource identifier.
- * @param result	poiner to boolean that is set to
-					JAVACALL_TRUE if resource ID is valid, 
-					JAVACALL_FALSE if resource ID is not valid 
- * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
+ * @param locale_index  index of the locale.
+ * @return JAVACALL_TRUE if resource ID is valid and 
+ *         JAVACALL_FALSE if something is wrong.
  */
- javacall_result javacall_mi18n_is_valid_resource_id(int locale_index,int resource_id,javacall_bool* result);
+javacall_bool javacall_mi18n_is_valid_resource_id(int resource_id, 
+                                            int locale_index);
 
 /**
  * Gets a resource length for pointed reource identifier and locale.
  *
- * @param locale_index  index of the locale.
+ * @param length  size of the resource (in bytes).
  * @param resource_id   resource identifier.
- * @param length	pointer to integer that receives the length of resource in bytes
+ * @param locale_index  index of the locale.
  * @return JAVACALL_OK if all done successfuly, 
- *         error code otherwise
+ *         JAVACALL_FAIL otherwise
  */
-javacall_result javacall_mi18n_get_resource_length(int locale_index, int resource_id,
-												   /* OUT */int* length);
+javacall_result javacall_mi18n_get_resource_length(int* length /* OUT */, 
+                                         int resource_id, int locale_index);
 
 /** @} */
 
