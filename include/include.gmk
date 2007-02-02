@@ -29,6 +29,7 @@ JAVACALL_INCLUDE_DIR_SET_LOCAL=\
  jsr179_location\
  jsr205_wma20 \
  jsr211_chapi \
+ jsr234_amms \
  jsr238_mi18n \
  jsr75_pim_fc \
  jsr82_bt \

@@ -27,20 +27,24 @@
 #include "multimedia.h"
 #include <windows.h>
 
+extern void java_open_midi_out();
+extern void java_close_midi_out();
+
+extern HMIDIOUT g_hmo;
+extern CRITICAL_SECTION g_critSection;
+
 /**
  * Tone player handle
  */
 typedef struct {
-    javacall_int64  playerId;
+    javacall_int64	playerId;
     int     offset;             /* stopped offset */
     int     currentTime;        /* current playing time */
     int*    pToneBuffer;        /* Pointer to tone data buffer */
-    /* Current tone data size that stored to tone buffer in bytes */
-    int     toneDataSize;       
+    int     toneDataSize;       /* Current tone data size that stored to tone buffer in bytes */
     javacall_bool isForeground; /* Is in foreground? */
     javacall_bool isPlaying;    /* Is playing? */
     javacall_bool stopPlaying;  /* Stop JTS playing thread? */
-    HMIDIOUT      hmo;          /* Handle to opened midi output device */
 } tone_handle;
 
 /**********************************************************************************/
@@ -48,18 +52,26 @@ typedef struct {
 /**
  * Play tone by using MIDI short message
  */
-static void tone_play_sync(tone_handle* pHandle, int note, int duration, int volume)
+static void tone_play_sync(int note, int duration, int volume)
 {
     DWORD msg = 0;
 
-    msg = (((volume & 0xFF) << 16) | (((note & 0xFF) << 8) | 0x91));    
-    /* Note on at channel 3 */
-    midiOutShortMsg(pHandle->hmo, msg);
+    EnterCriticalSection(&g_critSection);
+    java_open_midi_out();
+    if (g_hmo) {
+        msg = (((volume & 0xFF) << 16) | (((note & 0xFF) << 8) | 0x91));    /* Note on at channel 3 */
+        midiOutShortMsg(g_hmo, msg);
+    }
+        LeaveCriticalSection(&g_critSection);
 
-    Sleep(duration);
-    msg &= 0xFFFFFF81;
+        Sleep(duration);
+        msg &= 0xFFFFFF81;
 
-    midiOutShortMsg(pHandle->hmo, msg);
+        EnterCriticalSection(&g_critSection);
+    if (g_hmo) {
+        midiOutShortMsg(g_hmo, msg);
+    }
+        LeaveCriticalSection(&g_critSection);
 }
 
 /**
@@ -102,7 +114,7 @@ static DWORD WINAPI tone_jts_player(void* pArg)
             duration = pTone[i + 1];
             duration = max(200, duration);
             totalDuration += duration;
-            tone_play_sync(pHandle, note, duration, volume);
+            tone_play_sync(note, duration, volume);
             break;
         }
 
@@ -110,13 +122,12 @@ static DWORD WINAPI tone_jts_player(void* pArg)
 
     }
 
-    JAVA_DEBUG_PRINT2("tone_jts_player END id=%d stopped=%d\n", 
-        (int)pHandle->playerId, pHandle->stopPlaying);
+    JAVA_DEBUG_PRINT2("tone_jts_player END id=%d stopped=%d\n", (int)pHandle->playerId, pHandle->stopPlaying);
 
     /* JTS loop ended not by stop => Post EOM event */
     if (JAVACALL_FALSE == pHandle->stopPlaying) {
-        javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_END_OF_MEDIA, 
-            pHandle->playerId, (void*)totalDuration);
+        javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_END_OF_MEDIA, pHandle->playerId, 
+                                         (void*)totalDuration);
         pHandle->offset = 0;
     }
     
@@ -132,9 +143,9 @@ static DWORD WINAPI tone_jts_player(void* pArg)
  * Create tone native player handle
  */
 static javacall_handle tone_create(javacall_int64 playerId, 
-                                   javacall_media_type mediaType,
-                                   const javacall_utf16* URI, 
-                                   long contentLength)
+								   javacall_media_type mediaType,
+								   const javacall_utf16* URI, 
+								   long contentLength)
 {
     tone_handle* pHandle = MALLOC(sizeof(tone_handle));
     if (NULL == pHandle) {
@@ -149,7 +160,6 @@ static javacall_handle tone_create(javacall_int64 playerId,
     pHandle->isPlaying = JAVACALL_FALSE;
     pHandle->isForeground = JAVACALL_TRUE;
     pHandle->stopPlaying = JAVACALL_FALSE;
-    pHandle->hmo = NULL;
 
     return pHandle;
 }
@@ -168,7 +178,6 @@ static javacall_result tone_close(javacall_handle handle)
     pHandle->toneDataSize = 0;
     pHandle->offset = 0;
     pHandle->currentTime = 0;
-    javacall_close_midi_out(&pHandle->hmo);
     
     FREE(pHandle);
 
@@ -196,6 +205,8 @@ static javacall_result tone_acquire_device(javacall_handle handle)
  */
 static javacall_result tone_release_device(javacall_handle handle)
 {
+    tone_handle* pHandle = (tone_handle*)handle;
+
     return JAVACALL_OK;
 }
 
@@ -203,8 +214,7 @@ static javacall_result tone_release_device(javacall_handle handle)
  * Store media data to temp file (except JTS type)
  * NOTE: JTS data always transfered at one time.
  */
-static long tone_do_buffering(javacall_handle handle, 
-                              const void* buffer, long length, long offset)
+long tone_do_buffering(javacall_handle handle, const void* buffer, long length, long offset)
 {
     tone_handle* pHandle = (tone_handle*)handle;
 
@@ -231,7 +241,7 @@ static long tone_do_buffering(javacall_handle handle,
 /**
  * Delete temp file
  */
-static javacall_result tone_clear_buffer(javacall_handle handle)
+javacall_result tone_clear_buffer(javacall_handle handle)
 {
     tone_handle* pHandle = (tone_handle*)handle;
 
@@ -257,12 +267,6 @@ static javacall_result tone_start(javacall_handle handle)
     if (JAVACALL_FALSE == pHandle->isForeground) {
         return JAVACALL_OK;
     }
-
-    if (pHandle->hmo == NULL) 
-        javacall_open_midi_out(&pHandle->hmo, JAVACALL_FALSE);
-
-    if (pHandle->hmo == NULL) 
-        return JAVACALL_FAIL;
 
     /* Create Win32 thread to play JTS data - non blocking */
     if (pHandle->toneDataSize) {

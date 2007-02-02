@@ -33,9 +33,6 @@ extern "C" {
 #include <windows.h>
 #include <stdio.h>
 #include "javacall_multimedia.h"
-#include "javacall_memory.h"
-#include "lcd.h"
-#include "mmmididev.h"
 
 #undef JAVA_DEBUG_PRINT
 #undef JAVA_DEBUG_PRINT1

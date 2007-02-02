@@ -26,32 +26,22 @@
 #include "multimedia.h"
 #include <windows.h>
 
-/**********************************************************************************/
+extern void java_open_midi_out();
 
-typedef struct javacall_interactive_midi_s {
-    HMIDIOUT hmOut;
-} javacall_interactive_midi_s;
+extern HMIDIOUT g_hmo;
+extern CRITICAL_SECTION g_critSection;
+
+/**********************************************************************************/
 
 /**
  * 
  */
 static javacall_handle interactive_midi_create(javacall_int64 playerId, 
-                                               javacall_media_type mediaType, 
-                                               const javacall_utf16* URI, 
-                                               long contentLength)
+											   javacall_media_type mediaType, 
+											   const javacall_utf16* URI, 
+											   long contentLength)
 {
-    javacall_interactive_midi_s* pIM = 
-        javacall_malloc(sizeof(javacall_interactive_midi_s));
-    if (pIM != NULL) {
-        javacall_result res;
-        pIM->hmOut = NULL;
-        res = javacall_open_midi_out(&(pIM->hmOut), JAVACALL_TRUE);
-        if (!JAVACALL_SUCCEEDED(res)) {
-            javacall_free(pIM);
-            pIM = NULL;
-        }
-    }
-    return (javacall_handle)pIM;
+    return (javacall_handle)1;  /* DUMMY RETURN VALUE */
 }
 
 /**
@@ -59,10 +49,6 @@ static javacall_handle interactive_midi_create(javacall_int64 playerId,
  */
 static javacall_result interactive_midi_close(javacall_handle handle)
 {
-    if (handle) {
-        javacall_interactive_midi_s* pIM = (javacall_interactive_midi_s*)handle;
-        javacall_close_midi_out(&pIM->hmOut);
-    }
     return JAVACALL_OK;
 }
 
@@ -71,10 +57,6 @@ static javacall_result interactive_midi_close(javacall_handle handle)
  */
 static javacall_result interactive_midi_destroy(javacall_handle handle)
 {
-    if (handle) {
-        interactive_midi_close(handle);
-        javacall_free(handle);
-    }
     return JAVACALL_OK;
 }
 
@@ -184,12 +166,12 @@ javacall_result interactive_midi_set_program(javacall_handle handle,
  */
 static
 javacall_result interactive_midi_short_midi_event(javacall_handle handle, 
-                                                  long type, long data1, long data2) 
-{
-    javacall_interactive_midi_s* pIM = (javacall_interactive_midi_s*)handle;
+                                                  long type, long data1, long data2) {
     javacall_result ret = JAVACALL_FAIL;
 
-    if ((pIM) && (pIM->hmOut)) {
+    EnterCriticalSection(&g_critSection);
+    java_open_midi_out();
+    if (g_hmo) {
         union { 
             DWORD dwData; 
             BYTE bData[4]; 
@@ -200,10 +182,11 @@ javacall_result interactive_midi_short_midi_event(javacall_handle handle,
         u.bData[2] = (BYTE)data2;
         u.bData[3] = 0; 
         
-        midiOutShortMsg(pIM->hmOut, u.dwData);
+        midiOutShortMsg(g_hmo, u.dwData);
 
         ret = JAVACALL_OK;
     }
+    LeaveCriticalSection(&g_critSection);
 
     return ret;
 }
@@ -213,8 +196,7 @@ javacall_result interactive_midi_short_midi_event(javacall_handle handle,
  */
 static
 javacall_result interactive_midi_long_midi_event(javacall_handle handle, 
-                                                 const char* data, long offset, 
-                                                 long* length) {
+                                                 const char* data, long offset, long* length) {
     return JAVACALL_FAIL;
 }
 

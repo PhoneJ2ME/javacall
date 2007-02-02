@@ -836,13 +836,8 @@ WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
         if(wParam != VK_F10) {
             break;
         }
-        // patch for VK_F10
-        if (WM_SYSKEYUP == iMsg) {
-            iMsg = WM_KEYUP;
-        } else if (WM_SYSKEYDOWN == iMsg) {
-            iMsg = WM_KEYDOWN;
-        }
-        /* fall through */
+
+    /* fall through */
     case WM_KEYDOWN:
         {
         /* Impl note: to send pause and resume notifications */
@@ -1478,6 +1473,13 @@ static int mapKey(WPARAM wParam, LPARAM lParam) {
     case VK_RIGHT:
         return JAVACALL_KEY_RIGHT;
 
+    /*
+     * Map VK_SPACE here, but in the
+     * high level Java code, we have to
+     * test for special case since "space"
+     * should be used for textbox's as space.
+     */
+    case VK_SPACE:
     case VK_RETURN:
         return JAVACALL_KEY_SELECT;
 
@@ -1497,7 +1499,7 @@ static int mapKey(WPARAM wParam, LPARAM lParam) {
     ToAscii((UINT)wParam, (UINT)lParam, keyStates, temp, (UINT)0);
 
     /* At this point only return printable characters. */
-    if(temp[0] >= ' ' && temp[0] < 127) {
+    if(temp[0] >= ' ' && temp[0] <= 127) {
         return temp[0];
     }
 
