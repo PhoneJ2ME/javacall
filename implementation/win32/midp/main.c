@@ -360,13 +360,11 @@ int main(int argc, char *main_argv[]) {
 
     javacall_events_init();
 
-#if !ENABLE_MULTIPLE_INSTANCES
     if (isSecondaryInstance())
     {
         enqueueInterprocessMessage(argc, argv);
         return 0;
     }
-#endif
 
     hJavaThread = CreateThread(
                       NULL,              // default security attributes
@@ -383,9 +381,6 @@ int main(int argc, char *main_argv[]) {
         return -1;
     }
 
-#if ENABLE_MULTIPLE_INSTANCES
-    WaitForSingleObject(lifecycle_shutdown_event, INFINITE);
-#else
     while (WaitForSingleObject(lifecycle_shutdown_event, 50) != WAIT_OBJECT_0)
     {
         /* Check for Interprocess event */
@@ -402,7 +397,6 @@ int main(int argc, char *main_argv[]) {
             mainArgumentsHandle(iarvc, iargv);
         }
     } /* end of while(WaitForSingleObject(...)) */
-#endif    
 
     CloseHandle(lifecycle_shutdown_event);
     return 1;
@@ -458,7 +452,7 @@ static const int maindlg_enable[maindlg_course_cnt][maindlg_items_cnt] = {
 };
 
 static const char* maindlg_trustdmn[] = {
-    "operator", "identified", "unidentified", "minimum", "maximum"
+    "trusted", "untrusted", "minimum", "maximum"
 };
 #define maindlg_trustdmn_cnt (sizeof(maindlg_trustdmn) / sizeof(maindlg_trustdmn[0]))
 
