@@ -129,6 +129,7 @@ typedef enum {
     JAVACALL_TRUE  = 1
 } javacall_bool;
 
+
 /**
  * @typedef javacall_handle
  * @brief general handle type
@@ -140,12 +141,6 @@ typedef void* javacall_handle;
  * check JAVACALL_PLATFORM_INC_DIR environment variable
  */
 #include <javacall_platform_defs.h>
-
-/**
- * @typedef javacall_suite_id
- * @brief suite unique ID
- */
-typedef javacall_int32 javacall_suite_id;
 
 /**
  * @typedef javacall_utf16_string
@@ -172,6 +167,12 @@ typedef unsigned char* javacall_utf8_string;
  * terminated string
  */
 typedef const unsigned char* javacall_const_utf8_string;
+
+/**
+ * @typedef javacall_pixel
+ * @brief Pixel type for LCD graphics
+ */
+typedef unsigned short javacall_pixel;
 
 /**
  * @}
