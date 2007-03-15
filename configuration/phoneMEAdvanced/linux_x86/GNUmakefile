@@ -1,4 +1,4 @@
-#   
+#
 #
 # Copyright  1990-2006 Sun Microsystems, Inc. All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -23,15 +23,16 @@
 # information or have any questions. 
 #
 
-#List of possible JSRs that use common build rules
-#Please set the list in your configuration
-#example:
-#JSR_LIST=MIDP JSR_120 JSR_135 JSR_177 JSR_211
-         
-#JSR folders for source and include files
-MIDP_JC_DIR=midp
-JSR_120_JC_DIR=jsr120_wma
-JSR_135_JC_DIR=jsr135_mmapi
-JSR_177_JC_DIR=jsr177_satsa
-JSR_211_JC_DIR=jsr211_chapi
+ifeq ($(JAVACALL_DIR),)
+$(error JAVACALL_DIR is not set.)
+endif
 
+include environment.gmk
+
+#For each project specified toolchain shall be selected
+include $(JAVACALL_DIR)/build/gcc/rules.gmk
+
+#Specific targets can be achieved before and after achievement of common targets
+#Specify these targets after including 'rules.gmk' file.
+pre_target:
+post_target:
