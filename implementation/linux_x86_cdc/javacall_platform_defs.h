@@ -52,26 +52,26 @@ typedef unsigned short javacall_utf16;
  * @typedef javacall_int32
  * @brief 32 bit interger type
  */
-typedef __int32 javacall_int32;
+typedef signed long javacall_int32;
 
 /**
  * @typedef javacall_int64
  * @brief 64 bit interger type
  */
-typedef __int64 javacall_int64;
+typedef long long javacall_int64;
 
 /**
  * @typedef javacall_filename_string
  * @brief general file name string type, this type is null terminated string
  */
-typedef javacall_utf16* javacall_filename_string;
+typedef char* javacall_filename_string;
 
 /**
  * @typedef javacall_const_filename_string
  * @brief general constant file name string type, this type is constant null
  * terminated string
  */
-typedef const javacall_utf16* javacall_const_filename_string;
+typedef const char* javacall_const_filename_string;
 
 /**
  * @def JAVACALL_MAX_FILE_NAME_LENGTH
