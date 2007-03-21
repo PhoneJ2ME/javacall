@@ -140,6 +140,9 @@ void util_draw_bitmap(unsigned char *bitmap_rgb,
  */
 javacall_result javacall_annunciator_vibrate(javacall_bool enableVibrate) {
 
+    sprintf(print_buffer, "Vibrate %s\n",
+            enableVibrate ? "Enabled" : "Disabled");
+    javacall_print(print_buffer);
     return JAVACALL_FAIL;
 
 }
@@ -158,6 +161,8 @@ javacall_result javacall_annunciator_vibrate(javacall_bool enableVibrate) {
  */
 javacall_result javacall_annunciator_flash_backlight(javacall_bool enableBacklight) {
 
+    sprintf(print_buffer, "Backlight %s\n", enableBacklight ? "Enabled" : "Disabled");
+    javacall_print(print_buffer);
     return JAVACALL_FAIL;
 }
 
@@ -189,7 +194,11 @@ javacall_result javacall_annunciator_display_trusted_icon(javacall_bool enableTr
     }
 #endif
 
-    return JAVACALL_FAIL;
+    sprintf(print_buffer, "Trusted Icon %s\n",
+            enableTrustedIcon ? "Enabled" : "Disabled");
+    javacall_print(print_buffer);
+
+    return JAVACALL_OK;
 }
 
 /**
@@ -226,7 +235,11 @@ javacall_result javacall_annunciator_display_network_icon(javacall_bool enableNe
     }
 #endif
 
-    return JAVACALL_FAIL;
+    sprintf(print_buffer, "Network Icon %s\n",
+            enableNetworkIndicator ? "Enabled" : "Disabled");
+    javacall_print (print_buffer);
+
+    return JAVACALL_OK;
 
 }
 
@@ -245,7 +258,6 @@ javacall_result javacall_annunciator_display_network_icon(javacall_bool enableNe
  */
 javacall_result javacall_annunciator_display_input_mode_icon(javacall_input_mode_type mode) {
     
-#if 0
     static char input_mode_types[][20] = {
       "LATIN_CAPS",
       "LATIN_LOWERCASE",
@@ -288,7 +300,6 @@ javacall_result javacall_annunciator_display_input_mode_icon(javacall_input_mode
     javacall_print (".\n");
 
     return JAVACALL_OK;
-#endif
 
 #if 0
     javacall_pixel *scrn;
@@ -333,7 +344,7 @@ javacall_result javacall_annunciator_display_input_mode_icon(javacall_input_mode
     }
 
 #endif
-    return JAVACALL_FAIL;
+    return JAVACALL_NOT_IMPLEMENTED;
 }
 
 /**
@@ -394,5 +405,5 @@ javacall_result javacall_annunciator_play_audible_tone(javacall_audible_tone_typ
  */
 javacall_result javacall_annunciator_display_secure_network_icon(
         javacall_bool enableIndicator) {
-    return JAVACALL_FAIL;
+    return JAVACALL_OK;
 }
