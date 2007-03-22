@@ -29,7 +29,7 @@
  */
  
 #include "multimedia.h"
-#include "pngencoder.h"
+#include "javautil_media.h"
 #include <windows.h>
 #include <tchar.h>
 #include <vfw.h>

@@ -45,7 +45,6 @@
 
 static char usage[] = "\t runMidlet \n"
                       "\t runMidlet help \n"
-                      "\t runMidlet manager \n"
                       "\t runMidlet [debug] loop \n"
                       "\t runMidlet [debug] tck \n"
                       "\t runMidlet [debug] tck <url> \n"
@@ -69,7 +68,7 @@ static char controlLoopInfo[] = "\t To control:\n"
                                 "\t \n"
                                 "\t '0' to quit";
                                 
-unsigned char enable_java_debugger = 0;
+extern unsigned char enable_java_debugger;
 
 /* forward declaration */
 void main_install_content(int argc, char *argv[]);
@@ -95,13 +94,9 @@ DWORD WINAPI ThreadProc( LPVOID lpParam ) {
 */
 javacall_bool mainArgumentsHandle(int argc, char *argv[]) {
 
-    if (argc == 1) {
+    if(argc == 1) {
 
-        /* no arguments */
-        javanotify_start_java_with_arbitrary_args(argc, argv);
-
-    } else if((argc == 2) && (strcmp(argv[1], "manager") == 0)) {
-
+        /* no arguments was passed */
         /* appmanager.Manager */
         javacall_print("main() Starting Manager\n");
         javanotify_start();
@@ -365,13 +360,11 @@ int main(int argc, char *main_argv[]) {
 
     javacall_events_init();
 
-#if !ENABLE_MULTIPLE_INSTANCES
     if (isSecondaryInstance())
     {
         enqueueInterprocessMessage(argc, argv);
         return 0;
     }
-#endif
 
     hJavaThread = CreateThread(
                       NULL,              // default security attributes
@@ -388,9 +381,6 @@ int main(int argc, char *main_argv[]) {
         return -1;
     }
 
-#if ENABLE_MULTIPLE_INSTANCES
-    WaitForSingleObject(lifecycle_shutdown_event, INFINITE);
-#else
     while (WaitForSingleObject(lifecycle_shutdown_event, 50) != WAIT_OBJECT_0)
     {
         /* Check for Interprocess event */
@@ -407,7 +397,6 @@ int main(int argc, char *main_argv[]) {
             mainArgumentsHandle(iarvc, iargv);
         }
     } /* end of while(WaitForSingleObject(...)) */
-#endif    
 
     CloseHandle(lifecycle_shutdown_event);
     return 1;
@@ -463,7 +452,7 @@ static const int maindlg_enable[maindlg_course_cnt][maindlg_items_cnt] = {
 };
 
 static const char* maindlg_trustdmn[] = {
-    "operator", "identified", "unidentified", "minimum", "maximum"
+    "trusted", "untrusted", "minimum", "maximum"
 };
 #define maindlg_trustdmn_cnt (sizeof(maindlg_trustdmn) / sizeof(maindlg_trustdmn[0]))
 
