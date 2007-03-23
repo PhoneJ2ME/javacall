@@ -27,7 +27,7 @@
  * @file
  *
  * Simple implementation of wma UDP Emulator.
- * The messages supposed to be received from WMATool.jar:
+ * The messages supposed to be received from JSR205Tool.jar:
  * bash-3.1$ java -jar midp/bin/i386/WMATool.jar -send mms://1234:1234 -message "blah" -multipart -verbose
  * bash-3.1$ java -jar midp/bin/i386/WMATool.jar -send sms://1234:1234 -message "blah"
  * To receive message start:
@@ -97,7 +97,6 @@ static void decodeSmsBuffer(char *buffer,
     *ptr = 0;
 }
 
-//#define SMS_BUFF_LENGTH (1024*40)
 #define SMS_BUFF_LENGTH 1024
 char encode_sms_buffer[SMS_BUFF_LENGTH];
 
@@ -146,6 +145,7 @@ javacall_result process_UDPEmulator_sms_incoming(javacall_handle handle) {
 
     javacall_sms_encoding   encodingType;
     int                     encodingType_int;
+    char*                   sourceAddress;
     char*                   msg;
     int                     msgLen;
     int                     destPortNum;
@@ -159,6 +159,7 @@ javacall_result process_UDPEmulator_sms_incoming(javacall_handle handle) {
     ok = javacall_datagram_recvfrom_start(
         handle, pAddress, &port, buffer, length, &pBytesRead, &pContext);
 
+    sourceAddress = (char*)pAddress; // 127.0.0.1 = 0x0100007f
     decodeSmsBuffer(buffer, &encodingType_int, &destPortNum, &timeStamp, 
         &recipientPhone, &senderPhone, &msgLen, &msg, &sourcePortNum);
 
@@ -166,10 +167,10 @@ javacall_result process_UDPEmulator_sms_incoming(javacall_handle handle) {
         javacall_print("SMS on unregistered port received!");
         return JAVACALL_FAIL;
     }
-    //printf("## javacall: SMS received. %i/%i\n", destPortNum, sourcePortNum);
+    //printf("SMS received! %i/%i\n", destPortNum, sourcePortNum);
 
     encodingType = encodingType_int;
-    javanotify_incoming_sms(encodingType, senderPhone, msg, msgLen, 
+    javanotify_incoming_sms(encodingType, sourceAddress, msg, msgLen, 
         (unsigned short)sourcePortNum, (unsigned short)destPortNum, timeStamp);
 
     return JAVACALL_OK;
@@ -228,11 +229,11 @@ javacall_result init_wma_emulator() {
     int mmsInPortNumber;
 #endif
 
-    smsInPortNumber = getIntProp("JSR_120_SMS_PORT", DEFAULT_SMS_IN_PORT);
+    smsInPortNumber = getIntProp("JSR_205_SMS_PORT", DEFAULT_SMS_IN_PORT);
     ok1 = javacall_datagram_open(smsInPortNumber, &smsDatagramSocketHandle);
     if (ok1 == JAVACALL_OK) { ok = JAVACALL_FAIL; }
 
-    cbsInPortNumber = getIntProp("JSR_120_CBS_PORT", DEFAULT_CBS_IN_PORT);
+    cbsInPortNumber = getIntProp("JSR_205_CBS_PORT", DEFAULT_CBS_IN_PORT);
     ok1 = javacall_datagram_open(cbsInPortNumber, &cbsDatagramSocketHandle);
     if (ok1 == JAVACALL_OK) { ok = JAVACALL_FAIL; }
 
@@ -263,22 +264,22 @@ javacall_result finalize_wma_emulator() {
 
 /**
  * Checks if the handle is of wma_emulator sockets.
- *   returns JAVACALL_FALSE for mismatch
- *   returns JAVACALL_TRUE for proper sockets and processes the emulation
+ *   returns JAVACALL_FAIL for mismatch
+ *   returns JAVACALL_OK for proper sockets and processes the emulation
  */
 javacall_result try_process_wma_emulator(javacall_handle handle) {
     if (handle == smsDatagramSocketHandle) {
         process_UDPEmulator_sms_incoming(handle);
-        return JAVACALL_TRUE;
+        return JAVACALL_OK;
     }
     if (handle == cbsDatagramSocketHandle) {
         process_UDPEmulator_cbs_incoming(handle);
-        return JAVACALL_TRUE;
+        return JAVACALL_OK;
     }
 #if (ENABLE_JSR_205)
     if (handle == mmsDatagramSocketHandle) {
         process_UDPEmulator_mms_incoming(handle);
-        return JAVACALL_TRUE;
+        return JAVACALL_OK;
     }
 #endif
     return JAVACALL_FALSE;
