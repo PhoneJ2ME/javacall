@@ -122,8 +122,7 @@ IDI_ICON1               ICON                    "es-gate.ico"
 //
 // Bitmap
 //
-IDB_BITMAP_PHONE_H        BITMAP                  "phoneH.bmp"
-IDB_BITMAP_PHONE_V        BITMAP                  "phoneV.bmp"
+IDB_BITMAP_PHONE        BITMAP                  "phone.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
