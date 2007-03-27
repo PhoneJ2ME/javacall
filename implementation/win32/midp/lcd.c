@@ -1039,6 +1039,7 @@ void CreateEmulatorWindow() {
 #ifdef SKINS_MENU_SUPPORTED
     hMenu = buildSkinsMenu();
 #endif
+
     sprintf(caption, "+%d Sun Anycall", _phonenum);
 
     hwnd = CreateWindow(szAppName,            /* window class name       */
