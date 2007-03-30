@@ -37,23 +37,21 @@
 extern char* encodeSmsBuffer(
     int encodingType, int destPortNum, javacall_int64 timeStamp, 
     const char* recipientPhone, const char* senderPhone, int msgLength, const char* msg,
-    int sourcePortNum,
     int* out_encode_sms_buffer_length);
 extern char* getIPBytes_nonblock(char *hostname);
 
 extern char* getProp(const char* propName, char* defaultValue);
 extern int getIntProp(const char* propName, int defaultValue);
-extern const char* getStrProp(const char* propName, const char* defaultValue);
 
 /**
  * send an SMS message
  *
  * Actually 
- *   - sends a datagramm to 11101 port, it can be received by WMATool.jar (used in TCK tests)
+ *   - sends a datagramm to 11101 port, it can be received by JSR205Tool.jar (used in TCK tests)
  *   - writes a message to the console (it is enough for native tests)
  * The address to send datagram is one of the following:
- *   - 127.0.0.1 if JSR_120_DATAGRAM_HOST environment variable is not send
- *   - JSR_120_DATAGRAM_HOST environment variable value (if set).
+ *   - 127.0.0.1 if JSR_205_DATAGRAM_HOST environment variable is not send
+ *   - JSR_205_DATAGRAM_HOST environment variable value (if set).
  *
  * Refer to javacall_sms.h header for complete description.
  */
@@ -72,19 +70,19 @@ int javacall_sms_send(  javacall_sms_encoding    msgType,
 
     javacall_int64 timeStamp = 0;
     const char* recipientPhone = destAddress;
-    const char* senderPhone = getStrProp("JSR_120_PHONE_NUMBER", "+1234567");
+    char* senderPhone = "+1234567";
     int encodedSMSLength;
     char* encodedSMS;
 
-    char* IP_text = getProp("JSR_120_DATAGRAM_HOST", "127.0.0.1");
-    //WMATool listens on 11101 port, but sends to 11100 port
-    int smsRemotePortNumber = getIntProp("JSR_120_SMS_OUT_PORT", 11101);
+    char* IP_text = getProp("JSR_205_DATAGRAM_HOST", "127.0.0.1");
+    //JSR205Tool listens on 11101 port, but sends to 11100 port
+    int smsRemotePortNumber = getIntProp("JSR_205_SMS_OUT_PORT", 11101);
 
     javacall_network_init_start();
     pAddress = getIPBytes_nonblock(IP_text);
 
     encodedSMS = encodeSmsBuffer(msgType, destPort, timeStamp, recipientPhone, senderPhone, 
-        msgBufferLen, msgBuffer, sourcePort, &encodedSMSLength);
+        msgBufferLen, msgBuffer, &encodedSMSLength);
 
     ok = javacall_datagram_open(0, &datagramHandle);
     if (ok == JAVACALL_OK) {
@@ -123,7 +121,6 @@ javacall_result javacall_sms_add_listening_port(unsigned short portNum){
         }
     }
 
-    //printf("javacall_sms_add_listening_port %i", portNum);
     if (free == -1) {
         javacall_print("ports amount exceeded");
         return JAVACALL_FAIL;
