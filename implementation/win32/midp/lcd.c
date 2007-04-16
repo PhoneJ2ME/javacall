@@ -627,13 +627,8 @@ WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
                 } 
                 isPaused =!isPaused;
                 break;
-            } else if(VK_HOME == wParam ||
-                      VK_F7 == wParam) {
+            } else if(VK_HOME == wParam) {
                 javanotify_switch_to_ams();
-                break;
-            } else if(VK_END == wParam ||
-                      VK_F8 == wParam) {
-                javanotify_shutdown();
                 break;
             } else if(VK_F4 == wParam) {
                 javanotify_select_foreground_app();
@@ -1012,7 +1007,7 @@ static void destroySkinsMenu(void) {
 }
 #endif // SKINS_MENU_SUPPORTED
 
-extern char* _phonenum;
+extern int _phonenum;
 /**
  * Create Emulator Window
  */
@@ -1045,7 +1040,8 @@ void CreateEmulatorWindow() {
 #ifdef SKINS_MENU_SUPPORTED
     hMenu = buildSkinsMenu();
 #endif
-    sprintf(caption, "%s Sun Anycall", _phonenum);
+
+    sprintf(caption, "+%d Sun Anycall", _phonenum);
 
     hwnd = CreateWindow(szAppName,            /* window class name       */
                         caption,              /* window caption          */
@@ -1247,7 +1243,6 @@ static int mapKey(WPARAM wParam, LPARAM lParam) {
         return JAVACALL_KEY_BACKSPACE;
 
     case VK_HOME:
-    case VK_F7:
 //        return MD_KEY_HOME;
 
     default:
