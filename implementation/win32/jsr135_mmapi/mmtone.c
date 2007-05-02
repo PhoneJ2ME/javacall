@@ -153,9 +153,10 @@ static DWORD WINAPI tone_jts_player(void* pArg)
     static long volume = 100;   /* to reserve last volume */
 
     int i;
-    long note;
     tone_handle* pHandle = (tone_handle*)pArg;
     long duration, totalDuration = pHandle->currentTime;
+    /* Tone data is byte array */
+    char  note;
     char* pTone = pHandle->pToneBuffer;
 
     for(i = pHandle->offset; i < pHandle->toneDataSize; i += 2) {

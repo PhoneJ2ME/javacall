@@ -31,13 +31,6 @@ extern "C" {
 #include "javacall_multimedia.h" 
 
 /**
- * Query whether audio mixing is supported or not
- */
-javacall_bool javacall_media_supports_mixing() {
-    return JAVACALL_FALSE;
-}
-
-/**
  * Call this function when VM starts
  * Perform global initialization operation
  * 
