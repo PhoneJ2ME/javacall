@@ -1,26 +1,26 @@
 /*
  *
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2006 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
+ * 2 only, as published by the Free Software Foundation. 
  * 
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
+ * included at /legal/license.txt). 
  * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA 
  * 
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
+ * information or have any questions. 
  */
 
 /**
@@ -41,10 +41,11 @@
  * @{
  */
 
-#ifndef __JAVACALL_JSR211_H
-#define __JAVACALL_JSR211_H
+#ifndef __JAVACALL_JSR211_CHAPI_H
+#define __JAVACALL_JSR211_CHAPI_H
 
 #include <javacall_defs.h>
+#include "javacall_chapi_result.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,85 +104,21 @@ typedef struct _InvocParams {
     void*                 data;               /**< The data; may be NULL */
 } javacall_chapi_invocation;
 
-
 /**
- * Internal structure.
- * Common result buffer for serialized data storage.
+ * Result codes for jsr211_execute_handler() method.
  */
-typedef struct {
-    javacall_utf16* buf;
-    int bufsz;
-    int used;
-} _JAVAUTIL_CHAPI_RESBUF_;
+typedef enum {
+    JAVACALL_CHAPI_LAUNCH_OK                = 0,    /** OK, handler started */
+    JAVACALL_CHAPI_LAUNCH_OK_SHOULD_EXIT    = 1,    /** OK, handler started 
+                                            or is ready to start, 
+                                            invoking app should exit. */
+    JAVACALL_CHAPI_LAUNCH_ERR_NOTSUPPORTED  = -1,   /** ERROR, not supported */
+    JAVACALL_CHAPI_LAUNCH_ERR_NO_HANDLER    = -2,    /** ERROR, no requested handler */
+    JAVACALL_CHAPI_LAUNCH_ERR_NO_INVOCATION = -3,    /** ERROR, no invocation queued for 
+                                                       requested handler */
+    JAVACALL_CHAPI_LAUNCH_ERROR             = -4    /** common error */
+} javacall_chapi_launch_result;
 
-/**
- * Result buffer for Content Handler, used as OUTPUT parameter of 
- * javacall functions. 
- * Use the @link javautil_chapi_fillHandler() javautil_chapi_fillHandler function to fill this structure.
- */
-typedef _JAVAUTIL_CHAPI_RESBUF_*   javacall_chapi_result_CH;
-
-/**
- * Result buffer for Content Handlers array, used as OUTPUT parameter of 
- * javacall functions.
- * Use the @link javautil_chapi_appendHandler() javautil_chapi_appendHandler function to fill this structure.
- */
-typedef _JAVAUTIL_CHAPI_RESBUF_*   javacall_chapi_result_CH_array;
-
-/**
- * Result buffer for string array, used as OUTPUT parameter of javacall 
- * functions. 
- * Use the @link javautil_chapi_appendString() javautil_chapi_appendString function to fill this structure.
- */
-typedef _JAVAUTIL_CHAPI_RESBUF_*   javacall_chapi_result_str_array;
-
-
-/**
- * Fills output result structure with handler data.
- * @param id handler ID
- * @param id_size handler ID size
- * @param suite_id suite ID
- * @param suite_id_size suite ID size
- * @param class_name handler class name
- * @param class_name_size handler class name size
- * @param flag handler installation flag
- * @param result output result structure.
- * @return operation status.
- */
-javacall_result javautil_chapi_fillHandler(
-        const javacall_utf16* id, int id_size,
-        const javacall_utf16* suite_id, int suite_id_size,
-        const javacall_utf16* class_name, int class_name_size,
-        int flag, /*OUT*/ javacall_chapi_result_CH result);
-
-/**
- * Appends the handler data to the result array.
- * @param id handler ID
- * @param id_size handler ID size
- * @param suite_id suite ID
- * @param suite_id_size suite ID size
- * @param class_name handler class name
- * @param class_name_size handler class name size
- * @param flag handler installation flag
- * @param array output result array.
- * @return operation status.
- */
-javacall_result javautil_chapi_appendHandler(
-        const javacall_utf16* id, int id_size,
-        const javacall_utf16* suite_id, int suite_id_size,
-        const javacall_utf16* class_name, int class_name_size,
-        int flag, /*OUT*/ javacall_chapi_result_CH_array array);
-
-/**
- * Appends string to output string array.
- * @param str appended string
- * @param str_size the string size
- * @param array string array.
- * @return operation status.
- */
-javacall_result javautil_chapi_appendString(
-        const javacall_utf16* str, int str_size,
-        /*OUT*/ javacall_chapi_result_str_array array);
 
 /**
  * Initializes content handler registry.
@@ -220,9 +157,9 @@ javacall_result javacall_chapi_finalize(void);
  * @param nAccesses length of accesses array
  * @return operation status.
  */
-javacall_result javacall_chapi_register_handler(
+javacall_result javacall_chapi_register_java_handler(
         const javacall_utf16_string id,
-        const javacall_utf16_string suite_id,
+        int suite_id,
         const javacall_utf16_string class_name,
         int flag, 
         const javacall_utf16_string* types,     int nTypes,
@@ -270,7 +207,7 @@ javacall_result javacall_chapi_find_handler(
  * @return status of the operation
  */
 javacall_result javacall_chapi_find_for_suite(
-                        const javacall_utf16_string suite_id,
+                        int suite_id,
                         /*OUT*/ javacall_chapi_result_CH_array result);
 
 /**
@@ -361,7 +298,7 @@ javacall_result javacall_chapi_get_handler_field(
 javacall_result javacall_chapi_execute_handler(
             const javacall_utf16_string id, 
             javacall_chapi_invocation* invoc, 
-            /*OUT*/ int* exec_status);
+            /*OUT*/ javacall_chapi_launch_result* exec_status);
 
 /** @} */
 
@@ -369,4 +306,4 @@ javacall_result javacall_chapi_execute_handler(
 }
 #endif/*__cplusplus*/
 
-#endif  /* __JAVACALL_JSR211_H */
+#endif  /* __JAVACALL_JSR211_CHAPI_H */
