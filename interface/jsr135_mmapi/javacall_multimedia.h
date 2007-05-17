@@ -1,30 +1,32 @@
 /*
  *
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2006 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
+ * 2 only, as published by the Free Software Foundation. 
  * 
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
+ * included at /legal/license.txt). 
  * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA 
  * 
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
+ * information or have any questions. 
  */ 
 
 #ifndef __JAVACALL_MULTIMEDIA_H
 #define __JAVACALL_MULTIMEDIA_H
+
+#include "javacall_defs.h"
 
 /**
  * @file javacall_multimedia.h
@@ -77,7 +79,6 @@ extern "C" {
  */
 
 #include "javacall_defs.h" 
-#include "javacall_lcd.h"
 
 /** @defgroup Constant Constants
  *  Constant values
@@ -89,7 +90,6 @@ extern "C" {
 #define JAVACALL_VIDEO_MPEG4_MIME_2  "video/mp4"
 #define JAVACALL_VIDEO_3GPP_MIME     "video/3gpp"
 #define JAVACALL_VIDEO_3GPP_MIME_2   "video/3gpp2"
-
 #define JAVACALL_AUDIO_MIDI_MIME     "audio/midi"
 #define JAVACALL_AUDIO_MIDI_MIME_2   "audio/mid"
 #define JAVACALL_AUDIO_SP_MIDI_MIME  "audio/sp-midi"
@@ -104,9 +104,6 @@ extern "C" {
 #define JAVACALL_AUDIO_QCELP_MIME    "audio/qcelp"
 #define JAVACALL_AUDIO_QCELP_MIME_2  "audio/vnd.qcelp"
 
-#define JAVACALL_IMAGE_JPEG_MIME     "image/jpeg"
-#define JAVACALL_IMAGE_PNG_MIME      "image/png"
-
 #define JAVACALL_DEVICE_TONE_MIME    "device://tone"
 #define JAVACALL_DEVICE_MIDI_MIME    "device://midi"
 #define JAVACALL_CAPTURE_VIDEO_MIME  "capture://video"
@@ -115,38 +112,6 @@ extern "C" {
 /* Java MMAPI JTS Values */
 #define JAVACALL_SET_VOLUME  -8
 #define JAVACALL_SILENCE     -1
-
-/**
- * @enum javacall_media_notification_type
- * 
- * @brief Multimedia notification type.
- */
-typedef enum {
-    /** Posted when a Player has reached the end of the media. */
-    JAVACALL_EVENT_MEDIA_END_OF_MEDIA = 1,      
-    /** Posted when the duration of a Player is updated. */    
-    JAVACALL_EVENT_MEDIA_DURATION_UPDATED, 
-    /** Record size limit is reached or no more space is available */
-    JAVACALL_EVENT_MEDIA_RECORD_SIZE_LIMIT,
-    /** Posted when an error occurs during the recording. */
-    JAVACALL_EVENT_MEDIA_RECORD_ERROR,          
-    /** Posted when the system or another higher priority application has released 
-        an exclusive device which is now available to the Player. */
-    JAVACALL_EVENT_MEDIA_DEVICE_AVAILABLE,      
-    /** Posted when the system or another higher priority application has temporarily 
-        taken control of an exclusive device which was previously available to the Player. */
-    JAVACALL_EVENT_MEDIA_DEVICE_UNAVAILABLE,    
-    /** Posted when the Player enters into a buffering mode. */
-    JAVACALL_EVENT_MEDIA_BUFFERING_STARTED,     
-    /** Posted when the Player leaves the buffering mode. */
-    JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED,
-    /** Posted when the volume changed from external action. */
-    JAVACALL_EVENT_MEDIA_VOLUME_CHANGED,
-    /** Posted when the blocked snapshot finished */
-    JAVACALL_EVENT_MEDIA_SNAPSHOT_FINISHED,
-    /** Posted when an error had occurred. */
-    JAVACALL_EVENT_MEDIA_ERROR
-} javacall_media_notification_type;
 
 /**
  * @enum javacall_media_type
@@ -209,53 +174,44 @@ typedef enum {
  */
 typedef struct {
     /** Mime type string */
-    javacall_const_utf8_string mimeType;
+    const char* mimeType;
     /** Supported protocol count */
     int         protocolCount;  
     /** Supported protocol strings for this Mime type. Can't exceed JAVACALL_MEDIA_MAX_PROTOCOL_COUNT. */
-    javacall_const_utf8_string protocols[JAVACALL_MEDIA_MAX_PROTOCOL_COUNT];
+    const char* protocols[JAVACALL_MEDIA_MAX_PROTOCOL_COUNT];
 } javacall_media_caps;
 
 /** @} */
 
-/**
- * @defgroup MediaNotification Notification API for Multimedia
- * @ingroup JSR135 
- *
- * @brief Multimedia related external events notification
- *
- * @{
- */        
+/**********************************************************************************/
 
 /**
- * Post native media event to Java event handler
+ * @defgroup MediaMandatoryInitFunctions          Mandatory Media library initilization functions
+ * @ingroup JSR135
+ *
+ * @brief Intialize multimedia javacall library
  * 
- * @param type          Event type
- * @param playerId      Player ID that came from javacall_media_create function
- * @param data          Data that will be carried with this notification
- *                      - JAVACALL_EVENT_MEDIA_END_OF_MEDIA
- *                          data = Media time when the Player reached end of media and stopped.
- *                      - JAVACALL_EVENT_MEDIA_DURATION_UPDATED
- *                          data = The duration of the media.
- *                      - JAVACALL_EVENT_MEDIA_RECORD_SIZE_LIMIT
- *                          data = The media time when the recording stopped.
- *                      - JAVACALL_EVENT_MEDIA_DEVICE_AVAILABLE
- *                          data = String specifying the name of the device.
- *                      - JAVACALL_EVENT_MEDIA_DEVICE_UNAVAILABLE   
- *                          data = String specifying the name of the device.
- *                      - JAVACALL_EVENT_MEDIA_BUFFERING_STARTED
- *                          data = Designating the media time when the buffering is started.
- *                      - JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED
- *                          data = Designating the media time when the buffering stopped.
- *                      - JAVACALL_EVENT_MEDIA_VOLUME_CHANGED
- *                          data = volume value.
- *                      - JAVACALL_EVENT_MEDIA_SNAPSHOT_FINISHED
- *                          data = None.
+ * @{
  */
-void javanotify_on_media_notification(javacall_media_notification_type type, 
-                                      javacall_int64 playerId, 
-                                      void* data);
 
+/**
+ * Call this function when VM starts
+ * Perform global initialization operation
+ * 
+ * @retval JAVACALL_OK      success
+ * @retval JAVACALL_FAIL    fail
+ */
+javacall_result javacall_media_initialize(void);
+
+/**
+ * Call this function when VM ends 
+ * Perfrom global free operaiton
+ * 
+ * @retval JAVACALL_OK      success
+ * @retval JAVACALL_FAIL    fail 
+ */
+javacall_result javacall_media_finalize(void);
+ 
 /** @} */
 
 /**********************************************************************************/
@@ -275,16 +231,7 @@ void javanotify_on_media_notification(javacall_media_notification_type type,
  * The last item of javacall_media_caps array should hold NULL mimeType value
  * Java layer will use this NULL value as a end of item mark
  */
-const javacall_media_caps* javacall_media_get_caps(void);
-
-/**
- * Query whether audio mixing is supported;
- *
- * @retval JAVACALL_TRUE    audio mixing is supported
- * @retval JAVACALL_FALSE   audio mixing is NOT supported
- * 
- */
-javacall_bool javacall_media_supports_mixing();
+javacall_media_caps* javacall_media_get_caps(void);
 
 /** @} */ 
 
@@ -304,8 +251,8 @@ javacall_bool javacall_media_supports_mixing();
  * This function is called at the first time to initialize native library.
  * You can do your own initialization job from this function.
  * 
+ * @param isolateId     Unique isolate ID for this playing
  * @param playerId      Unique player object ID for this playing
- *                      This unique ID is generated by Java MMAPI library.
  * @param mime          Mime unicode string
  * @param mimeLength    String length of mimeType
  * @param uri           URI unicode string to media data
@@ -315,7 +262,8 @@ javacall_bool javacall_media_supports_mixing();
  * 
  * @return              Handle of native library. if fail return NULL.
  */
-javacall_handle javacall_media_create(javacall_int64 playerId, 
+javacall_handle javacall_media_create(int isolateId,
+                                      int playerId, 
                                       const javacall_utf16* mime, 
                                       long mimeLength,
                                       const javacall_utf16* uri, 
@@ -375,6 +323,8 @@ javacall_result javacall_media_release_device(javacall_handle handle);
  * javacall_media_do_buffering function
  * In this case, native layer should handle all of data gathering by itself
  * 
+ * @param handle    Handle to the player
+ * 
  * @retval JAVACALL_OK      Yes, this protocol handled by device.
  * @retval JAVACALL_FAIL    No, please handle this protocol from Java.
  */
@@ -384,7 +334,7 @@ javacall_result javacall_media_protocol_handled_by_device(javacall_handle handle
  * Java MMAPI call this function to send media data to this library
  * This function can be called multiple time to send large media data
  * Native library could implement buffering by using any method (for example: file, heap and etc...)
- * And, buffering occurred in sequentially. not randomly.
+ * And, buffering occured in sequentially. not randomly.
  * 
  * When there is no more data, Java indicates end of buffering by setting buffer to NULL and length to -1.
  * OEM should care about this case.
@@ -467,7 +417,7 @@ long javacall_media_get_time(javacall_handle handle);
 
 /**
  * Seek to specified time.
- * This function can be called during play status or stop status
+ * This function can be called during play staus or stop status
  * 
  * @param handle    Handle to the library
  * @param ms        Seek position as ms time
@@ -478,13 +428,72 @@ long javacall_media_set_time(javacall_handle handle, long ms);
  
 /**
  * Get whole media time in ms.
- * This function can be called during play status or stop status.
+ * This function can be called during play staus or stop status.
  * 
  * @param handle    Handle to the library
  * 
  * @return          If success return time in ms else return -1
  */
 long javacall_media_get_duration(javacall_handle handle);
+
+/**
+ * Return true if player requires PCM Audio resources
+ * 
+ * @retval JAVACALL_TRUE      Player supports PCM Audio playback
+ * @retval JAVACALL_FALSE     Player does not support PCM Audio playback
+ */
+javacall_bool javacall_media_pcmaudio_device_required();
+
+/**
+ * Request to acquire PCM audio device resources used to play mixed 
+ * media data from all applications.
+ * 
+ * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
+ * @retval JAVACALL_FAIL    Java VM will raise the media exception
+ */
+javacall_result javacall_media_acquire_pcmaudio_device();
+
+/**
+ * Release device PCM audio resource. 
+ * 
+ * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
+ * @retval JAVACALL_FAIL    Nothing happened now. Same as JAVACALL_OK.
+ */
+javacall_result javacall_media_release_pcmaudio_device();
+
+/**
+ * Get mixed PCM audio data from library
+ * 
+ * @param isolateId  indicates library instance
+ * @param buffer     buffer for mixed audio data
+ * @param length     length of the buffer
+ * 
+ * @return          If success return 'length of buffered data' else return -1
+ */
+long javacall_media_get_pcmaudio(int isolateId, void* buffer, long length);
+
+/**
+ * Play PCM Audio in device
+ * 
+ * @param buffer     buffer for mixed audio data
+ * @param length     length of the buffer
+ * 
+ * @retval expected playback time in ms or -1 if FAIL
+ */
+long javacall_media_pcmaudio_playback(void* buffer, long length);
+
+/**
+ * Get PCM ctrl data from library
+ * 
+ * @param channels  OUT data - number of channels, either 1 or 2.
+ * @param bits      OUT data - sample size, which should be either 8 or 16 bits
+ * @param rate      OUT data - sampling rate in bits per second
+ * 
+ * @retval JAVACALL_OK      Success
+ * @retval JAVACALL_FAIL    Fail
+ */
+javacall_result javacall_media_get_pcmctl(int *channels,
+                                        int* /*OUT*/ bits, int* /*OUT*/ rate);
 
 /** @} */
 
@@ -649,7 +658,7 @@ javacall_result javacall_media_set_video_visible(javacall_handle handle, javacal
     
 /**
  * Start get current snapshot of video data
- * When snapshot operation done, call callback function to provide snapshot image data to Java.
+ * When snapshot operation doen, call callback function to provide snapshot image data to Java.
  *
  * @param handle            Handle to the library
  * @param imageType         Snapshot image type format as unicode string. 
@@ -1206,6 +1215,8 @@ javacall_result javacall_media_supports_recording(javacall_handle handle);
  * Is javacall_media_set_recordsize_limit function is working for this player?
  * In other words - set recording size limit function is working for this player?
  * 
+ * @param handle  Handle to the library 
+ * 
  * @retval JAVACALL_TRUE    Yes. Supported.
  * @retval JAVACALL_FALSE   No. Not supported.
  */
@@ -1352,7 +1363,7 @@ int javacall_media_get_record_content_type_length(javacall_handle handle);
  *
  * @param handle                Handle of native player
  * @param contentTypeBuf        Buffer to return content type unicode string
- * @param contentTypeBufLength  Length of contentTypeBuf buffer (in unicode metrics)
+ * @param contentTypeBufLength  Lenght of contentTypeBuf buffer (in unicode metrics)
  *
  * @return  Length of content type string stored in contentTypeBuf
  */
@@ -1402,7 +1413,7 @@ javacall_result javacall_media_close_recording(javacall_handle handle);
  * @param handle    Handle to the native player
  * @param option    MVM options. Check about javacall_media_mvm_option type definition.
  * 
- * @retval JAVACALL_OK      Something happened
+ * @retval JAVACALL_OK      Somthing happened
  * @retval JAVACALL_FAIL    Nothing happened. JVM ignore this return value now.
  */
 javacall_result javacall_media_to_foreground(javacall_handle handle,
@@ -1421,7 +1432,7 @@ javacall_result javacall_media_to_foreground(javacall_handle handle,
  * @param handle    Handle to the native player
  * @param option    MVM options. Check about javacall_media_mvm_option type definition.
  * 
- * @retval JAVACALL_OK      Something happened
+ * @retval JAVACALL_OK      Somthing happened
  * @retval JAVACALL_FAIL    Nothing happened. JVM ignore this return value now.
  */
 javacall_result javacall_media_to_background(javacall_handle handle,
