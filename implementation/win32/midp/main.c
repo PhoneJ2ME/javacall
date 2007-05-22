@@ -1,26 +1,26 @@
 /*
  *
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2006 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
+ * 2 only, as published by the Free Software Foundation. 
  * 
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
+ * included at /legal/license.txt). 
  * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA 
  * 
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
+ * information or have any questions. 
  */
 
 /**
@@ -45,7 +45,6 @@
 
 static char usage[] = "\t runMidlet \n"
                       "\t runMidlet help \n"
-                      "\t runMidlet manager \n"
                       "\t runMidlet [debug] loop \n"
                       "\t runMidlet [debug] tck \n"
                       "\t runMidlet [debug] tck <url> \n"
@@ -69,7 +68,7 @@ static char controlLoopInfo[] = "\t To control:\n"
                                 "\t \n"
                                 "\t '0' to quit";
                                 
-unsigned char enable_java_debugger = 0;
+extern unsigned char enable_java_debugger;
 
 /* forward declaration */
 void main_install_content(int argc, char *argv[]);
@@ -79,8 +78,8 @@ LRESULT CALLBACK main_dlgproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 HANDLE lifecycle_shutdown_event;
 
 DWORD WINAPI ThreadProc( LPVOID lpParam ) {
-     javacall_lcd_init();
      CreateEmulatorWindow();
+     javacall_lcd_init();
      JavaTask();
      SetEvent(lifecycle_shutdown_event);
      javacall_print("Done JavaTask\n");
@@ -95,13 +94,9 @@ DWORD WINAPI ThreadProc( LPVOID lpParam ) {
 */
 javacall_bool mainArgumentsHandle(int argc, char *argv[]) {
 
-    if (argc == 1) {
+    if(argc == 1) {
 
-        /* no arguments */
-        javanotify_start_java_with_arbitrary_args(argc, argv);
-
-    } else if((argc == 2) && (strcmp(argv[1], "manager") == 0)) {
-
+        /* no arguments was passed */
         /* appmanager.Manager */
         javacall_print("main() Starting Manager\n");
         javanotify_start();
@@ -279,7 +274,7 @@ javacall_bool mainArgumentsHandle(int argc, char *argv[]) {
 //extern char *destinationHost;
 //extern int destinationPort, localPort;
 //extern unsigned short defaultDestinationPort, defaultLocalPort;
-char* _phonenum;
+int _phonenum;
 
 #define MAIN_ARGS_MAX  14
 char  maindlg_args[4096]; /* buffer to recieve all arguments */
@@ -292,8 +287,7 @@ int main(int argc, char *main_argv[]) {
     HANDLE hJavaThread;
     char** argv = main_argv;
 
-    _phonenum = getenv("JSR_120_PHONE_NUMBER");
-    _phonenum = _phonenum ? _phonenum : "5550000";
+    _phonenum = _getpid();
 
     if ((argc == 2) && (0 == strcmp(argv[1], "dlg"))) {
         /* show UI modal dialog box to request main arguments */
@@ -336,7 +330,7 @@ int main(int argc, char *main_argv[]) {
             argv += 1;
             continue;
         } else if (1 < argc && 0 == strcmp(argv[1], "phonenumber")) {
-            _phonenum = argv[2];
+            _phonenum = atoi(argv[2]);
 	     argc -= 2;
             argv += 2;
             continue;
@@ -366,13 +360,11 @@ int main(int argc, char *main_argv[]) {
 
     javacall_events_init();
 
-#if !ENABLE_MULTIPLE_INSTANCES
     if (isSecondaryInstance())
     {
         enqueueInterprocessMessage(argc, argv);
         return 0;
     }
-#endif
 
     hJavaThread = CreateThread(
                       NULL,              // default security attributes
@@ -389,9 +381,6 @@ int main(int argc, char *main_argv[]) {
         return -1;
     }
 
-#if ENABLE_MULTIPLE_INSTANCES
-    WaitForSingleObject(lifecycle_shutdown_event, INFINITE);
-#else
     while (WaitForSingleObject(lifecycle_shutdown_event, 50) != WAIT_OBJECT_0)
     {
         /* Check for Interprocess event */
@@ -408,7 +397,6 @@ int main(int argc, char *main_argv[]) {
             mainArgumentsHandle(iarvc, iargv);
         }
     } /* end of while(WaitForSingleObject(...)) */
-#endif    
 
     CloseHandle(lifecycle_shutdown_event);
     return 1;
@@ -464,7 +452,7 @@ static const int maindlg_enable[maindlg_course_cnt][maindlg_items_cnt] = {
 };
 
 static const char* maindlg_trustdmn[] = {
-    "operator", "identified", "unidentified", "minimum", "maximum"
+    "trusted", "untrusted", "minimum", "maximum"
 };
 #define maindlg_trustdmn_cnt (sizeof(maindlg_trustdmn) / sizeof(maindlg_trustdmn[0]))
 
