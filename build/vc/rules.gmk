@@ -33,7 +33,8 @@ endif
 
 include $(JAVACALL_DIR)/build/common.gmk
 
-TEMP=$(patsubst %.c,%.obj,$(PORTING_SOURCE))
+TEMP1=$(patsubst %.c,%.obj,$(PORTING_SOURCE))
+TEMP=$(patsubst %.cpp,%.obj,$(TEMP1))
 ifneq ($(FILTER_OBJECTS)x,x)
 PORTING_OBJECTS+=$(filter-out $(FILTER_OBJECTS),$(TEMP))
 else # ifneq ($(FILTER_OBJECTS)x,x)
@@ -72,7 +73,13 @@ ADDITIONAL_RC_INCLUDE_DIRS += $(RESOURCE_IMAGES_DIR)
 RCFLAGS += $(foreach dir,$(ADDITIONAL_RC_INCLUDE_DIRS),/i`$(call fixcygpath, $(dir))`) 
 
 AR=lib.exe 
+ifeq ($(TARGET_CPU),arm)
+ARFLAGS=-nologo -MACHINE:ARM
+else
 ARFLAGS=-nologo -MACHINE:X86
+endif
+
+LOCAL_CFLAGS_$(BUILD) += $(PLATFORM_FLAGS)
 
 OUTPUT_OPTION=-Fo`$(call fixcygpath, $@)` \
               -Fp$(JAVACALL_OUTPUT_OBJ_DIR)/javacall \
