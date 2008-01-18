@@ -23,12 +23,6 @@
  * information or have any questions.
  */
 
-/**
- * @file
- *
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 
