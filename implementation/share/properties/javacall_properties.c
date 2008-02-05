@@ -66,7 +66,10 @@ javacall_result javacall_initialize_configurations(void) {
  * Finalize the configuration subsystem.
  */
 void javacall_finalize_configurations(void) {
+#ifdef USE_PROPERTIES_FROM_FS
     int file_name_len = sizeof(property_file_name)/sizeof(unsigned short);
+#endif //USE_PROPERTIES_FROM_FS
+
     if (!init_done) {
         return;
     }
@@ -93,8 +96,7 @@ void javacall_finalize_configurations(void) {
  */
 javacall_result javacall_get_property(const char* key,
                                       javacall_property_type type,
-                                      char** result){
-    char* value = NULL;
+                                      char** result) {
     char* joined_key = NULL;
 
     /* protection against access to uninitialized properties */
@@ -122,7 +124,6 @@ javacall_result javacall_get_property(const char* key,
         return JAVACALL_FAIL;
     }
 }
-
 
 /**
  * Sets a property value matching the key in the specified
