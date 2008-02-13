@@ -760,7 +760,6 @@ static javacall_handle audio_qs_create(int appId, int playerId,
             newHandle->hdr.playerID         = playerId;
             newHandle->hdr.gmIdx            = gmIdx;
             newHandle->hdr.wholeContentSize = -1;
-            newHandle->wav.em               = NULL;
 
             ef = g_QSoundGM[gmIdx].EM135;
 
@@ -886,8 +885,7 @@ static javacall_result audio_qs_close(javacall_handle handle){
         case JC_FMT_MS_PCM:
         case JC_FMT_AMR:
         {
-            if( NULL != h->wav.em )
-                mQ234_EffectModule_removePlayer(h->wav.em, h->wav.stream);
+            mQ234_EffectModule_removePlayer(g_QSoundGM[gmIdx].EM135, h->wav.stream);
             r = JAVACALL_OK;
         }
 
@@ -1129,18 +1127,8 @@ static javacall_result audio_qs_do_buffering(
             {
                 int sRate;
 
-                if( NULL != h->wav.stream )
-                {
-                    if( NULL != h->wav.em )
-                    {
-                        mQ234_EffectModule_removePlayer( h->wav.em, h->wav.stream );
-                        h->wav.em = NULL;
-                    }
-                    mQ234_WaveStream_Destroy( h->wav.stream );
-                    h->wav.stream = NULL;
-                }
-
                 wav_setStreamPlayerData(&(h->wav));
+
                 sRate = h->wav.rate;
 
                 if(16 == h->wav.bits)
@@ -1201,7 +1189,6 @@ static javacall_result audio_qs_do_buffering(
                 if(h->wav.stream != NULL) {
                     mQ234_EffectModule_addPlayer(
                         g_QSoundGM[gmIdx].EM135, h->wav.stream);
-                    h->wav.em = g_QSoundGM[gmIdx].EM135;
                 }
 
                 JC_MM_DEBUG_PRINT4( 
@@ -1220,18 +1207,10 @@ static javacall_result audio_qs_do_buffering(
             }
             else
             {
-                if( NULL != h->wav.stream )
-                {
-                    if( NULL != h->wav.em )
-                    {
-                        mQ234_EffectModule_removePlayer( h->wav.em, h->wav.stream );
-                        h->wav.em = NULL;
-                    }
-                    mQ234_WaveStream_Destroy( h->wav.stream );
-                    h->wav.stream = NULL;
-                }
-
+                //printf( "audio_qs_do_buffering AMR: calling AMRDecoder_setStreamPlayerData...\n" );
                 AMRDecoder_setStreamPlayerData(&(h->wav));
+
+                //printf( "audio_qs_do_buffering AMR: calling mQ234_CreateWaveStreamPlayer...\n" );
 
                 switch( h->wav.channels )
                 {
@@ -1259,7 +1238,6 @@ static javacall_result audio_qs_do_buffering(
                 if(h->wav.stream != NULL)
                 {
                     e = mQ234_EffectModule_addPlayer(g_QSoundGM[gmIdx].EM135, h->wav.stream);
-                    h->wav.em = g_QSoundGM[gmIdx].EM135;
                     JC_MM_ASSERT( MQ234_ERROR_NO_ERROR == e );
                 }
 
