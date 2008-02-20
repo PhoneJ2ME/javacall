@@ -79,7 +79,7 @@ extern "C" {
 #include "javacall_defs.h" 
 
 /**
-* @defgroup jsr135MediaFormatDefs Multimedia Format types and functions
+* @defgroup jsr135MediaFormatDefs Multimedia Format types
 *
 * @ingroup jsr135MediaFormat
 * @{
@@ -190,12 +190,6 @@ extern "C" {
 /** Interactive midi, device/midi */
 #define JAVACALL_MEDIA_FORMAT_DEVICE_MIDI       "DEVICE_MIDI"
 
-/** Capture formats section */
-/** Capture audio, capture/audio */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO     "CAPTURE_AUDIO"
-/** Capture video, capture/video */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO     "CAPTURE_VIDEO"
-
 /** Unknown format */
 #define JAVACALL_MEDIA_FORMAT_UNKNOWN           "UNKNOWN"
 /** Unsupported format */
@@ -220,12 +214,6 @@ typedef javacall_const_ascii_string javacall_media_format_type;
 #define JAVACALL_MEDIA_HTTPS_PROTOCOL           0x10    // "https://"
 #define JAVACALL_MEDIA_RTP_PROTOCOL             0x20    // "rtp://"
 #define JAVACALL_MEDIA_RTSP_PROTOCOL            0x40    // "rtsp://"
-
-/**
- * 
- * Special protocol types.
- */
-#define JAVACALL_MEDIA_CAPTURE_PROTOCOL       0x8000    // "capture://"
 
 /**
  * 
