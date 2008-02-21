@@ -1,5 +1,6 @@
 /*
- * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
+ *
+ * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -504,7 +505,6 @@ javacall_result javacall_chapi_get_content_handler_friendly_appname(javacall_con
  *                      if classname_out is null class name is not retrieved 
  * @param classname_len pointer to integer initialized by caller to length of classname buffer
  * @param flag_out pointer to integer receiving handler registration type, can be null
- *                 for native handlers registration flag should contain REGISTERED_NATIVE_FLAG
  *                 if flag_out is null registration flag is not retrieved 
  * @return JAVACALL_OK if operation was successful, 
  *         JAVACALL_CHAPI_ERROR_BUFFER_TOO_SMALL if output buffer lenght is too small to keep result
@@ -626,13 +626,15 @@ javacall_result javacall_chapi_platform_invoke(int invoc_id,
  * @param dataLen if greater than 0, then length of changed data buffer
  * @param data the data
  * @param status result of the invocation processing. 
+ * @return result of operation.
  */
-void javanotify_chapi_platform_finish(int invoc_id, 
+javacall_result javanotify_chapi_platform_finish(int invoc_id, 
         javacall_utf16_string url,
         int argsLen, javacall_utf16_string* args,
         int dataLen, void* data, 
         javacall_chapi_invocation_status status)
 {
+     return JAVACALL_NOT_IMPLEMENTED;
 }
 
 
@@ -642,11 +644,13 @@ void javanotify_chapi_platform_finish(int invoc_id,
  * @param handler_id target Java handler Id
  * @param invocation filled out structure with invocation params
  * @param invoc_id assigned by JVM invocation Id for further references
+ * @return result of operation.
  */
-void javanotify_chapi_java_invoke(
+javacall_result javanotify_chapi_java_invoke(
         const javacall_utf16_string handler_id, 
-        javacall_chapi_invocation* invocation, /* OUT */ int invoc_id)
+        javacall_chapi_invocation* invocation, /* OUT */ int* invoc_id)
 {
+     return JAVACALL_NOT_IMPLEMENTED;
 }
 
 

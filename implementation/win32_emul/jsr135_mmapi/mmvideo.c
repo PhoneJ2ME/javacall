@@ -57,13 +57,6 @@ extern javacall_result audio_get_time(javacall_handle handle, long* ms);
 extern javacall_result audio_set_time(javacall_handle handle, long* ms);
 extern javacall_result audio_get_duration(javacall_handle handle, long* ms);
 
-extern javacall_result audio_get_java_buffer_size(javacall_handle handle,
-        long* java_buffer_size, long* first_data_size);
-extern javacall_result audio_set_whole_content_size(javacall_handle handle,
-        long whole_content_size);
-extern javacall_result audio_get_buffer_address(javacall_handle handle,
-        const void** buffer, long* max_size);
-
 //extern char * javautil_media_type_to_mime(javacall_media_format_type media_type);
 
 //volume ctrl
@@ -88,17 +81,11 @@ static javacall_handle video_create(int appId, int playerId,
     static LimeFunction *f = NULL;
     javacall_int64 res;
     audio_handle* pHandle = MALLOC(sizeof(audio_handle));
+    char * media_mime_type;
     size_t uriLength = ( NULL != URI ) ? wcslen(URI) : 0;
 
     javacall_utf16 *mediaTypeWide;
     int mediaTypeWideLen;
-    
-    int len = MAX_MIMETYPE_LENGTH;
-    char *buff = MALLOC(len);
-    
-    if (buff == NULL) {
-        return NULL;
-    }
 
     if (NULL == pHandle) {
         return NULL;
@@ -110,39 +97,28 @@ static javacall_handle video_create(int appId, int playerId,
                             "createVideoPlayer");
     }
 
-    if (fmt_str2mime(fmt_enum2str(mediaType), buff, len) == JAVACALL_FAIL) {
-        mediaTypeWide = NULL;
-        mediaTypeWideLen = 0;
-    }
-    else {
-        mediaTypeWide = char_to_unicode(buff);
-        mediaTypeWideLen = wcslen(mediaTypeWide);
-    }
+    media_mime_type = NULL; // POKR: javautil_media_type_to_mime(mediaType);
+    mediaTypeWide = char_to_unicode(media_mime_type);
+    mediaTypeWideLen = wcslen(mediaTypeWide);//MultiByteToWideChar(CP_ACP,MB_PRECOMPOSED,(LPCSTR)mediaType,-1,mediaTypeWide,256);
+
     
     f->call(f, &res, mediaTypeWide, mediaTypeWideLen, URI, uriLength);
 
-    pHandle->hWnd             = (long) res;
-    pHandle->offset           = 0;
-    pHandle->duration         = -1;
-    pHandle->curTime          = 0;
-    pHandle->isolateId        = appId;
-    pHandle->playerId         = playerId;
-    pHandle->timerId          = 0;
-    pHandle->isForeground     = JAVACALL_TRUE;
-    pHandle->mediaType        = mediaType;
-    pHandle->buffer           = NULL;
-    pHandle->wholeContentSize = -1;
-    pHandle->isBuffered       = JAVACALL_FALSE;
-    
+    pHandle->hWnd = (long)res;
+    pHandle->offset = 0;
+    pHandle->duration = -1;
+    pHandle->curTime = 0;
+    pHandle->isolateId = appId;
+    pHandle->playerId = playerId;
+    pHandle->timerId = 0;
+    pHandle->isForeground = JAVACALL_TRUE;
+    pHandle->mediaType = mediaType;
+
     // set the file name to the URI
     if (NULL != URI && uriLength>0) {
         wcstombs(pHandle->fileName, URI, uriLength);
     }
 
-    if (buff != NULL) {
-        FREE(buff);
-    }
-    
     return pHandle;
 }
 
@@ -216,7 +192,7 @@ static javacall_result video_resume(javacall_handle handle)
 static javacall_result
 video_do_buffering(javacall_handle handle,
                    const void* buffer, long *length,
-                   javacall_bool *need_more_data, long *min_data_size) {
+                   javacall_bool *need_more_data, long *min_data_size){
     return audio_do_buffering(handle, buffer, length,
                               need_more_data, min_data_size);
 }
@@ -489,53 +465,6 @@ static javacall_result video_switch_to_background(javacall_handle handle, int op
     return JAVACALL_OK;
 }
 
-static javacall_result video_get_java_buffer_size(javacall_handle handle,
-        long* java_buffer_size, long* first_data_size)
-{
-    return audio_get_java_buffer_size(
-            handle, java_buffer_size, first_data_size);
-}
-
-static javacall_result video_set_whole_content_size(javacall_handle handle,
-        long whole_content_size)
-{
-    return audio_set_whole_content_size(handle, whole_content_size);
-}
-
-static javacall_result video_get_buffer_address(javacall_handle handle,
-        const void** buffer, long* max_size)
-{
-    return audio_get_buffer_address(handle, buffer, max_size);
-}
-
-static javacall_result video_get_format(javacall_handle handle, jc_fmt* fmt)
-{
-    audio_handle* pHandle = (audio_handle *) handle;
-    
-    if (pHandle->isBuffered) {
-        *fmt = pHandle->mediaType;
-    }
-    else {
-        *fmt = JC_FMT_UNKNOWN;
-    }
-    
-    return JAVACALL_OK;
-}
-
-static javacall_result video_set_video_color_key(
-            javacall_handle handle, javacall_bool on, javacall_pixel color) {
-    
-    static LimeFunction *f = NULL;
-    
-    if (f == NULL) {
-        f = NewLimeFunction(LIME_MMAPI_PACKAGE, LIME_MMAPI_CLASS,
-                "setVideoAlpha");
-    }
-    
-    f->call(f, NULL, !on, color);
-    
-    return JAVACALL_OK;
-}
 /**********************************************************************************/
 
 /**
@@ -543,21 +472,21 @@ static javacall_result video_set_video_color_key(
  */
 static media_basic_interface _video_basic_itf = {
     video_create,
-    video_get_format,
-    NULL, // get_player_controls
+    NULL,
+    NULL,
     video_close,
     video_destroy,
     video_acquire_device,
     video_release_device,
-    NULL, // realize
-    NULL, // prefetch
+    NULL,
+    NULL,
     video_start,
     video_stop,
     video_pause,
     video_resume,
-    video_get_java_buffer_size,
-    video_set_whole_content_size,
-    video_get_buffer_address,
+    NULL,
+    NULL,
+    NULL,
     video_do_buffering,
     video_clear_buffer,
     video_get_time,
@@ -574,7 +503,7 @@ static media_video_interface _video_video_itf = {
     video_get_video_size,
     video_set_video_visible,
     video_set_video_location,
-    video_set_video_color_key,
+    NULL,
     NULL
 };
 
