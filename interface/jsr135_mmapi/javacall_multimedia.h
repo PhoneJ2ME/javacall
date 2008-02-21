@@ -79,7 +79,7 @@ extern "C" {
 #include "javacall_defs.h" 
 
 /**
-* @defgroup jsr135MediaFormatDefs Multimedia Format types and functions
+* @defgroup jsr135MediaFormatDefs Multimedia Format types
 *
 * @ingroup jsr135MediaFormat
 * @{
@@ -189,12 +189,6 @@ extern "C" {
 #define JAVACALL_MEDIA_FORMAT_DEVICE_TONE       "DEVICE_TONE"
 /** Interactive midi, device/midi */
 #define JAVACALL_MEDIA_FORMAT_DEVICE_MIDI       "DEVICE_MIDI"
-
-/** Capture formats section */
-/** Capture audio, capture/audio */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO     "CAPTURE_AUDIO"
-/** Capture video, capture/video */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO     "CAPTURE_VIDEO"
 
 /** Unknown format */
 #define JAVACALL_MEDIA_FORMAT_UNKNOWN           "UNKNOWN"
