@@ -42,14 +42,13 @@
 #include "javacall_datagram.h"
 #include "javacall_lifecycle.h"
 
+#include "img/topbar.h"
+
 
 #include "lcd.h"
 #include "skins.h"
 #include "local_defs.h"
 
-#if ENABLE_ON_DEVICE_DEBUG
-#include "javacall_odd.h"
-#endif
 
 #define UNTRANSLATED_SCREEN_BITMAP (void*)0xffffffff
 
@@ -60,7 +59,6 @@
 
 #define MD_KEY_HOME (KEY_MACHINE_DEP)
 
-extern void drawTopbarImage(void);
 
 static HBITMAP getBitmapDCtmp = NULL;
 
@@ -88,9 +86,13 @@ static void releaseBitmapDC(HDC hdcMem);
 static void DrawBitmap(HDC hdc, HBITMAP hBitmap, int x, int y, int rop);
 static HDC getBitmapDC(void *imageData);
 static HPEN setPen(HDC hdc, int pixel, int dotted);
-
-void CreateEmulatorWindow(void);
-
+//static void DrawMenuBarBorder(HDC myhdc);
+//static void drawEmulatorScreen(javacall_bool fullscreen);
+       void CreateEmulatorWindow();
+/*
+static void paintVerticalScroll(HDC hdc, int scrollPosition,
+                                int scrollProportion);
+*/
 static void invalidateLCDScreen(int x1, int y1, int x2, int y2);
 static void RefreshScreen(int x1, int y1, int x2, int y2);  
 static int mapKey(WPARAM wParam, LPARAM lParam);
@@ -152,19 +154,15 @@ static javacall_bool reverse_orientation;
  IMPL NOTE: top bar at the moment is available only as raw data
  of fixed width & height and thus available only for displays
  with the same width. Scaleable top bar will be implemented and
- then this variable will become expared.
+ then those constants will become expared.
  */
-extern int topBarWidth;
-extern int topBarHeight;
+static int topBarHeight = 12;//_topbar_dib_data.hdr.biHeight; //11
+static int topBarWidth = 240;//_topbar_dib_data.hdr.biWidth;
 static javacall_bool topBarOn = JAVACALL_TRUE;
 
 /* current skin*/
 static ESkin* currentSkin;// = VSkin;
 
-#if ENABLE_ON_DEVICE_DEBUG
-static const char pStartOddKeySequence[] = "#1*2";
-static int posInSequence = 0;
-#endif
 
 /* global variables to record the midpScreen window inside the win32 main window */
 XRectangle midpScreen_bounds;
@@ -183,7 +181,7 @@ javacall_result javacall_lcd_init(void) {
         reverse_orientation = JAVACALL_FALSE;
         inFullScreenMode = JAVACALL_FALSE;
         penAreDragging = JAVACALL_FALSE;
-        initialized = JAVACALL_TRUE;  
+        initialized = JAVACALL_TRUE;
     }
 
     return JAVACALL_OK;
@@ -252,7 +250,6 @@ javacall_result javacall_lcd_finalize(void) {
  *        which can take one of the following:
  *              -# JAVACALL_LCD_COLOR_RGB565
  *              -# JAVACALL_LCD_COLOR_ARGB
- *              -# JAVACALL_LCD_COLOR_RGBA
  *              -# JAVACALL_LCD_COLOR_RGB888
  *              -# JAVACALL_LCD_COLOR_OTHER
  *
@@ -283,33 +280,6 @@ javacall_pixel* javacall_lcd_get_screen(javacall_lcd_screen_type screenType,
 }
 
 /**
- * Get top bar offscreen buffer
- *
- * @param screenWidth output paramter to hold width of top bar
- * @param screenHeight output paramter to hold height of top bar
- *
- * @return pointer to video ram mapped memory region of size
- *         ( screenWidth * screenHeight )
- *         or <code>NULL</code> in case of failure
- */
-javacall_pixel* getTopbarBuffer(int* screenWidth, int* screenHeight) {
-
-    if((JAVACALL_TRUE == initialized) && topBarOn) {
-        if(screenWidth) {
-            *screenWidth = VRAM.width;
-        }
-        if(screenHeight) {
-            *screenHeight = topBarHeight;
-        }
-
-        return VRAM.hdc;
-    }
-
-    return NULL;
-
-}
-
-/**
  * Set or unset full screen mode.
  *
  * This function should return <code>JAVACALL_FAIL</code> if full screen mode
@@ -337,11 +307,7 @@ javacall_result javacall_lcd_set_full_screen_mode(javacall_bool useFullScreen) {
     } else {
         topBarOn = (currentSkin->displayRect.width == topBarWidth) ?
             JAVACALL_TRUE : JAVACALL_FALSE;
-        if (topBarOn) {
-            drawTopbarImage();
-        }
     }
-
     return JAVACALL_OK;
 }
 
@@ -514,7 +480,7 @@ int handleNetworkDatagramEvents(WPARAM wParam,LPARAM lParam) {
 #endif
         return 0;
     case FD_READ:
-#if ENABLE_JSR_120
+#ifdef ENABLE_JSR_120
         if (JAVACALL_FALSE != try_process_wma_emulator((javacall_handle)wParam)) {
             return 0;
         }
@@ -661,13 +627,8 @@ WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
                 } 
                 isPaused =!isPaused;
                 break;
-            } else if(VK_HOME == wParam ||
-                      VK_F7 == wParam) {
+            } else if(VK_HOME == wParam) {
                 javanotify_switch_to_ams();
-                break;
-            } else if(VK_END == wParam ||
-                      VK_F8 == wParam) {
-                javanotify_shutdown();
                 break;
             } else if(VK_F4 == wParam) {
                 javanotify_select_foreground_app();
@@ -696,24 +657,6 @@ WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
            return 0;
            */
         default:
-#if ENABLE_ON_DEVICE_DEBUG
-            if (lParam & 0xf0000000) {
-                /* ignore if the key is repeated */
-                break;
-            }
-
-            /* assert(posInSequence == sizeof(pStartOddKeySequence) - 1) */
-            if (pStartOddKeySequence[posInSequence] == key) {
-                posInSequence++;
-                if (posInSequence == sizeof(pStartOddKeySequence) - 1) {
-                    posInSequence = 0;
-                    javanotify_enable_odd();
-                    break;
-                }
-            } else {
-                posInSequence = 0;
-            }
-#endif
             break;
         }
 
@@ -1016,9 +959,6 @@ static void setCurrentSkin(ESkin* newSkin) {
             MoveWindow(hMainWindow, wr.left, wr.top, 
                 r.right - r.left, r.bottom - r.top, TRUE);
         }
-        if (topBarOn) {
-            drawTopbarImage();
-        }
     }
 }
 
@@ -1067,7 +1007,7 @@ static void destroySkinsMenu(void) {
 }
 #endif // SKINS_MENU_SUPPORTED
 
-extern char* _phonenum;
+extern int _phonenum;
 /**
  * Create Emulator Window
  */
@@ -1100,7 +1040,8 @@ void CreateEmulatorWindow() {
 #ifdef SKINS_MENU_SUPPORTED
     hMenu = buildSkinsMenu();
 #endif
-    sprintf(caption, "%s Sun Anycall", _phonenum);
+
+    sprintf(caption, "+%d Sun Anycall", _phonenum);
 
     hwnd = CreateWindow(szAppName,            /* window class name       */
                         caption,              /* window caption          */
@@ -1233,7 +1174,7 @@ static void DrawBitmap(HDC hdc, HBITMAP hBitmap, int x, int y, int rop) {
     SelectObject(hdcMem, tmp);
     DeleteDC(hdcMem);
 }
- 
+
 /**
  *
  */
@@ -1302,7 +1243,6 @@ static int mapKey(WPARAM wParam, LPARAM lParam) {
         return JAVACALL_KEY_BACKSPACE;
 
     case VK_HOME:
-    case VK_F7:
 //        return MD_KEY_HOME;
 
     default:
@@ -1335,12 +1275,14 @@ static void RefreshScreen(int x1, int y1, int x2, int y2) {
     int y;
     int width;
     int height;
+    javacall_pixel* pixels = VRAM.hdc;
     int i;
     int j;
     javacall_pixel pixel;
     int r;
     int g;
     int b;
+    int count;
     unsigned char *destBits;
     unsigned char *destPtr;
 
@@ -1349,10 +1291,6 @@ static void RefreshScreen(int x1, int y1, int x2, int y2) {
     BITMAPINFO     bi;
     HGDIOBJ    oobj;
     HDC hdc;
-
-    int screenWidth = VRAM.width;
-    int screenHeight = VRAM.height;
-    javacall_pixel* screenBuffer = VRAM.hdc;
 
     if(x1 < 0) {
         x1 = 0;
@@ -1366,12 +1304,12 @@ static void RefreshScreen(int x1, int y1, int x2, int y2) {
         return;
     }
 
-    if(x2 > screenWidth) {
-        x2 = screenWidth;
+    if(x2 > VRAM.width) {
+        x2 = VRAM.width;
     }
 
-    if(y2 > screenHeight) {
-        y2 = screenHeight;
+    if(y2 > VRAM.height) {
+        y2 = VRAM.height;
     }
 
     x = x1;
@@ -1394,24 +1332,36 @@ static void RefreshScreen(int x1, int y1, int x2, int y2) {
     hdc = getBitmapDC(NULL);
 
     hdcMem = CreateCompatibleDC(hdc);
+  
+    if (topBarOn) {
+        unsigned char* raw_image = (unsigned char*)(_topbar_dib_data.info);
+        for(count = (topBarHeight * topBarWidth - 1); count >= 0 ; count--) {
+            unsigned int r,g,b;
+            r = *raw_image++;
+            g = *raw_image++;
+            b = *raw_image++;
+            VRAM.hdc[count] = RGB2PIXELTYPE(r,g,b);
+        }
+    }
+
 
     destHBmp = CreateDIBSection (hdcMem, &bi, DIB_RGB_COLORS, &destBits, NULL, 0);
-
 
     if(destBits != NULL) {
         oobj = SelectObject(hdcMem, destHBmp);
         SelectObject(hdcMem, oobj);
 
+
         for(j = 0; j < height; j++) {
             for(i = 0; i < width; i++) {
-                pixel = screenBuffer[((y + j) *screenWidth) + x + i];
+                pixel = pixels[((y + j) * VRAM.width) + x + i];
                 r = GET_RED_FROM_PIXEL(pixel);
                 g = GET_GREEN_FROM_PIXEL(pixel);
                 b = GET_BLUE_FROM_PIXEL(pixel);
 
                 destPtr = destBits + ((j * width + i) * sizeof (long));
 
-                *destPtr++ = b;
+                *destPtr++ = b; /* dest pixels seem to be in BGRA order */
                 *destPtr++ = g;
                 *destPtr++ = r;
             }
@@ -1451,34 +1401,6 @@ javacall_bool javacall_lcd_reverse_orientation() {
 javacall_bool javacall_lcd_get_reverse_orientation() {
 
      return reverse_orientation;
-}
-
-/**
- * checks the implementation supports native softbutton label.
- * 
- * @retval JAVACALL_TRUE   implementation supports native softbutton layer
- * @retval JAVACALL_FALSE  implementation does not support native softbutton layer
- */
-javacall_bool javacall_lcd_is_native_softbutton_layer_supported () {
-    return JAVACALL_FALSE;
-}
-
-
-/**
- * The following function is used to set the softbutton label in the native
- * soft button layer.
- * 
- * @param label the label for the softbutton
- * @param len the length of the label
- * @param index the corresponding index of the command
- * 
- * @retval JAVACALL_OK      success
- * @retval JAVACALL_FAIL    fail
- */
-javacall_result javacall_lcd_set_native_softbutton_label(const javacall_utf16* label,
-                                                         int len,
-                                                         int index){
-     return JAVACALL_FAIL;
 }
 
 /**

@@ -29,6 +29,10 @@
  * win32 implemenation for public keystore handling functions
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -39,6 +43,8 @@
 #include "javacall_dir.h"
 #include "javacall_logging.h"
 
+extern char* unicode_to_char(unsigned short* str);
+	
 typedef enum {
     OWNER_TAG      = 0x1,
     NOT_BEFORE_TAG = 0x2,
@@ -110,8 +116,8 @@ javacall_result javacall_security_keystore_start(javacall_handle* jc_h) {
         }
         rootPathLen+=i;
     } else {
-        printf("javacall_security.c : File name %ls, is to long.\n",
-               rootPath);
+        printf("javacall_security.c : File name %d, is to long.\n",
+               unicode_to_char(rootPath));
         return JAVACALL_FAIL;
     }
 
@@ -119,20 +125,20 @@ javacall_result javacall_security_keystore_start(javacall_handle* jc_h) {
 
     currentPosition = NULL;
 
-    printf("Opening %ls.\n", rootPath);
+    printf("Opening %s.\n", unicode_to_char(rootPath));
     result = javacall_file_open(rootPath, rootPathLen,
                                 JAVACALL_FILE_O_RDONLY,
                                 &handle);
     if(result == JAVACALL_FAIL) {
-        printf("Can't open %ls.\n", rootPath);
+        printf("Can't open %s.\n", unicode_to_char(rootPath));
         return JAVACALL_FAIL;
     }
 
     main_ks_size = (int)javacall_file_sizeofopenfile(handle);
     if(-1 == main_ks_size) {
         javacall_file_close(handle);
-        printf("Can't get javacall_file_sizeofopenfile() %ls\n",
-               rootPath);
+        printf("Can't get javacall_file_sizeofopenfile() %s\n",
+               unicode_to_char(rootPath));
         return JAVACALL_FAIL;
     }
 
@@ -144,7 +150,7 @@ javacall_result javacall_security_keystore_start(javacall_handle* jc_h) {
 
     res = javacall_file_read(handle, _main_ks_content, main_ks_size);
     if(res <= 0 ) {
-        printf("Can't read %ls\n", rootPath);
+        printf("Can't read %s\n", unicode_to_char(rootPath));
         free(_main_ks_content);
         javacall_file_close(handle);
         return JAVACALL_FAIL;
@@ -498,4 +504,7 @@ javacall_result javacall_security_permission_dialog_display(javacall_utf16* mess
     return JAVACALL_NOT_IMPLEMENTED;
 }
 
+#ifdef __cplusplus
+}
+#endif
 

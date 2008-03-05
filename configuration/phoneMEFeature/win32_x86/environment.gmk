@@ -1,5 +1,6 @@
+#   
 #
-# Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
+# Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
 # 
 # This program is free software; you can redistribute it and/or
@@ -32,15 +33,16 @@
 #
 #For 'midp' USE_MIDP and MIDP_JC_IMPL_PATH variables are used
 #For 'nams' USE_NATIVE_AMS_JC and NATIVE_AMS_JC_IMPL_PATH variables are used
-#To enable on device debug, specify USE_ON_DEVICE_DEBUG
 
-JSR_LIST = COMMON MIDP JSR_120 JSR_135 JSR_177 JSR_211
+ifeq ($(PROJECT_NAME),)
+PROJECT_NAME = "phoneME Feature project"
+PROJECT_VERSION = MR2
+endif
+
+JSR_LIST = MIDP JSR_120 JSR_135 JSR_177 JSR_211
 
 USE_MIDP=true
 MIDP_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/win32
-
-USE_COMMON=true
-COMMON_JC_IMPL_PATH = $(JAVACALL_DIR)/implementation/win32
 
 JSR_120_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/win32
 
@@ -50,27 +52,12 @@ JSR_177_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/win32
 
 JSR_211_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/win32
 
-ifeq ($(USE_ON_DEVICE_DEBUG),)
-USE_ON_DEVICE_DEBUG=false
+ifeq ($(USE_NATIVE_AMS_JC),)
+USE_NATIVE_AMS_JC=false
 endif
-
-ifeq ($(USE_ON_DEVICE_DEBUG),true)
-SPECIFIC_DEFINITIONS += -DENABLE_ON_DEVICE_DEBUG=1
-else
-SPECIFIC_DEFINITIONS += -DENABLE_ON_DEVICE_DEBUG=0
-endif
-
-ifeq ($(USE_NATIVE_AMS),)
-USE_NATIVE_AMS=false
-endif
-
-ifneq ($(USE_STATIC_PROPERTIES),true)
-SPECIFIC_DEFINITIONS += -DUSE_PROPERTIES_FROM_FS
-endif
-
 
 # Switch native AMS function on/off
-ifeq ($(USE_NATIVE_AMS), true)
+ifeq ($(USE_NATIVE_AMS_JC), true)
 
 JSR_LIST += NATIVE_AMS
 NATIVE_AMS_JC_IMPL_PATH = $(JAVACALL_DIR)/implementation/win32
@@ -92,7 +79,6 @@ SOURCE_OUTPUT_LIST += $(foreach jsr,$(JSR_LIST), $(if $(PREFIX_$(USE_$(jsr))), $
 SOURCE_OUTPUT_LIST += $(JAVACALL_PLATFORM_DEFS_DIR)/javacall_platform_defs.h javacall/implementation/win32
 SOURCE_OUTPUT_LIST += $(JAVACALL_DIR)/configuration/phoneMEFeature/win32_x86 javacall/configuration/phoneMEFeature
 SOURCE_OUTPUT_LIST += $(foreach jsr,$(JSR_LIST), $(if $(PREFIX_$(USE_$(jsr))), $($(jsr)_JC_IMPL_PATH)/$($(jsr)_JC_DIR) javacall/implementation/win32))
-SOURCE_OUTPUT_LIST += $(JAVACALL_DIR)/implementation/win32_x86_cldc/common javacall/implementation/win32_x86_cldc
 
 # Enable multiple runMidlet instances running on the same machine
 # Setting this to TRUE disables remote control of running runMidlet instance
@@ -104,12 +90,10 @@ USE_MULTIPLE_INSTANCES=true
 UTILITIES =                 \
         javautil_jad_parser \
         javautil_string \
-        javautil_unicode \
-        javautil_printf
+	javautil_unicode
 
 #Compile options that are not common for all configurations can be specified in
 #SPECIFIC_DEFINITIONS variable
-SPECIFIC_DEFINITIONS+=-I$(COMMON_JC_IMPL_PATH)/$(COMMON_JC_DIR)/
 SPECIFIC_DEFINITIONS+=-I$(MIDP_JC_IMPL_PATH)/$(MIDP_JC_DIR)/
 SPECIFIC_DEFINITIONS+=-DWIN32
 
@@ -119,10 +103,6 @@ endif
 
 ifeq ($(USE_JSR_120),true)
 SPECIFIC_DEFINITIONS+= -DENABLE_JSR_120=1 
-endif
-
-ifeq ($(USE_JSR_211),true)
-SPECIFIC_DEFINITIONS+=-I$(JSR_211_JC_IMPL_PATH)/$(JSR_211_JC_DIR)/inc/
 endif
 
 ifeq ($(USE_MULTIPLE_INSTANCES),true)
@@ -146,18 +126,12 @@ endif # ifeq ($(ENABLE_HIDDEN_DEP_FEATURES),true)
 
 #Porting objects that are added to PORTING_OBJECTS by default rules can be excluded
 #from the javacall library by setting FILTER_OBJECTS variable
-
-# Implementation of javacall events is different for cdc and cldc
-VPATH+=$(JAVACALL_DIR)/implementation/win32_x86_cldc/common
-
 ifdef SUBSYSTEM_EVENTS_MODULES
    ifeq ($(SUBSYSTEM_EVENTS_MODULES), slave_mode)
-      PORTING_SOURCE+=events_slave_mode.c
+      FILTER_OBJECTS=events.obj
    else
-      PORTING_SOURCE+=events.c
+      FILTER_OBJECTS=events_slave_mode.obj
    endif
 else
-   PORTING_SOURCE+=events.c
+   FILTER_OBJECTS=events_slave_mode.obj
 endif
-
-CONFIGURATION_PROPERTIES_FILE = properties.xml

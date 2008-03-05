@@ -33,44 +33,32 @@
 #
 #For 'midp' USE_MIDP and MIDP_JC_IMPL_PATH variables are used
 
-JSR_LIST = COMMON MIDP JSR_120 JSR_135 JSR_177 JSR_211
+JSR_LIST = MIDP JSR_120 JSR_135 JSR_177 JSR_211
 
 USE_MIDP=true
 MIDP_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/stubs
 
-USE_COMMON=true
-COMMON_JC_IMPL_PATH = $(JAVACALL_DIR)/implementation/stubs
-
-USE_JSR_120=true
 JSR_120_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/stubs
 
-USE_JSR_135=true
 JSR_135_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/stubs
 
-USE_JSR_177=true
 JSR_177_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/stubs
 
-USE_JSR_211=true
 JSR_211_JC_IMPL_PATH=$(JAVACALL_DIR)/implementation/stubs
 
 #For each project location for basic definitions shall be specified
 #(location of the used javacall_platform_defs.h)
-JAVACALL_PLATFORM_DEFS_DIR=$(JAVACALL_DIR)/implementation/win32
+JAVACALL_PLATFORM_DEFS_DIR=$(JAVACALL_DIR)/implementation/stubs
 
 SOURCE_OUTPUT_LIST += $(foreach jsr,$(JSR_LIST), $(if $(PREFIX_$(USE_$(jsr))), $($(jsr)_JC_IMPL_PATH)/$($(jsr)_JC_DIR) javacall/implementation/stubs))
-SOURCE_OUTPUT_LIST += $(JAVACALL_PLATFORM_DEFS_DIR)/javacall_platform_defs.h javacall/implementation/win32
-SOURCE_OUTPUT_LIST += $(JAVACALL_DIR)/implementation/share/properties javacall/implementation/share
+SOURCE_OUTPUT_LIST += $(JAVACALL_PLATFORM_DEFS_DIR)/javacall_platform_defs.h javacall/implementation/stubs
 SOURCE_OUTPUT_LIST += $(JAVACALL_DIR)/configuration/stubs/win32_x86 javacall/configuration/stubs
 
 #Specify list of utility objects necessary for the build
 UTILITIES =                 \
         javautil_jad_parser \
-        javautil_string \
-        javautil_unicode \
-        javautil_printf
+        javautil_string
 
 #Porting objects that are added to PORTING_OBJECTS by default rules can be excluded
 #from the javacall library by setting FILTER_OBJECTS variable
 FILTER_OBJECTS=sos_network.obj
-
-CONFIGURATION_PROPERTIES_FILE = properties.xml

@@ -56,6 +56,12 @@ extern "C" {
  */
 
 /**
+ * @typedef javacall_pixel
+ * @brief Pixel type for LCD graphics
+ */
+typedef unsigned short javacall_pixel;
+
+/**
  * @def RGB2PIXELTYPE
  *
  * Conversion between 3 RGB octets to a pixel type is defined for the following
@@ -66,14 +72,6 @@ extern "C" {
 #define RGB2PIXELTYPE(r,g,b)  (( ((javacall_pixel)b)>>3)&0x1f) | ( (( ((javacall_pixel)g)>>2)&0x3f) << 5) | ((( ((javacall_pixel)r)>>3)&0x1f)<<11)
 #endif
 
-/** Separate colors are 8 bits as in Java RGB */
-#ifndef GET_RED_FROM_PIXEL
-#define GET_RED_FROM_PIXEL(P)   (((P) >> 8) & 0xF8)
-#define GET_GREEN_FROM_PIXEL(P) (((P) >> 3) & 0xFC)
-#define GET_BLUE_FROM_PIXEL(P)  (((P) << 3) & 0xF8)
-#endif
-
-
 /**
  * @enum javacall_lcd_color_encoding_type
  * @brief Color encoding format
@@ -83,10 +81,8 @@ typedef enum {
     JAVACALL_LCD_COLOR_RGB565 =200,
     /** ARGB (Alpha + RGB) color format */
     JAVACALL_LCD_COLOR_ARGB   =201,
-    /** RGBA (RGB + Alpha) color format */
-    JAVACALL_LCD_COLOR_RGBA   =202,
     /** RGB888 color format */
-    JAVACALL_LCD_COLOR_RGB888 =203,
+    JAVACALL_LCD_COLOR_RGB888 =202,
     /** Other color format */
     JAVACALL_LCD_COLOR_OTHER  =199
 }javacall_lcd_color_encoding_type;
@@ -227,30 +223,7 @@ javacall_bool javacall_lcd_reverse_orientation();
   * Get flag of rotation
   */
 javacall_bool javacall_lcd_get_reverse_orientation();
-
-/**
- * checks the implementation supports native softbutton label.
- * 
- * @retval JAVACALL_TRUE   implementation supports native softbutton layer
- * @retval JAVACALL_FALSE  implementation does not support native softbutton layer
- */
-javacall_bool javacall_lcd_is_native_softbutton_layer_supported();
-
-
-/**
- * The following function is used to set the softbutton label in the native
- * soft button layer.
- * 
- * @param label the label for the softbutton
- * @param len the length of the label
- * @param index the corresponding index of the command
- * 
- * @retval JAVACALL_OK      success
- * @retval JAVACALL_FAIL    fail
- */
-javacall_result javacall_lcd_set_native_softbutton_label(const javacall_utf16* label,
-                                                         int len,
-                                                         int index);
+  
 /**
   * Return width of screen
   */
