@@ -55,9 +55,6 @@ typedef struct {
     int                     playerID;
     int                     gmIdx;
     long                    wholeContentSize;
-    unsigned char           *dataBuffer;
-    int                     dataBufferLen;
-    int                     dataBufferPos;
     IControl*               controls[CONT_MAX];
     javacall_bool           needProcessHeader;
 } ah_hdr;
