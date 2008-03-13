@@ -79,7 +79,7 @@ extern "C" {
 #include "javacall_defs.h" 
 
 /**
-* @defgroup jsr135MediaFormatDefs Multimedia Format types and functions
+* @defgroup jsr135MediaFormatDefs Multimedia Format types
 *
 * @ingroup jsr135MediaFormat
 * @{
@@ -189,12 +189,6 @@ extern "C" {
 #define JAVACALL_MEDIA_FORMAT_DEVICE_TONE       "DEVICE_TONE"
 /** Interactive midi, device/midi */
 #define JAVACALL_MEDIA_FORMAT_DEVICE_MIDI       "DEVICE_MIDI"
-
-/** Capture formats section */
-/** Capture audio, capture/audio */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO     "CAPTURE_AUDIO"
-/** Capture video, capture/video */
-#define JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO     "CAPTURE_VIDEO"
 
 /** Unknown format */
 #define JAVACALL_MEDIA_FORMAT_UNKNOWN           "UNKNOWN"
@@ -385,18 +379,9 @@ javacall_result javacall_media_get_configuration(
  * @param uriLength     String length of URI
  * @param handle        Handle of native library.
  *
- * @retval JAVACALL_OK                      Success
- * @retval JAVACALL_CONNECTION_NOT_FOUND    Could not connect to the URL
- * @retval JAVACALL_IO_ERROR                IO error occurred while connecting
- *                                          the URL or getting data 
- * @retval JAVACALL_INVALID_ARGUMENT        Invalid URL or other parameter
- * @retval JAVACALL_FAIL                    General failure or the following
- *                                          situation. Porting Layer may
- *                                          decide to reject the creation for
- *                                          some reason. For example, if you
- *                                          do not want media from some
- *                                          pre-defined "bad" Internet site.
- *                                          
+ * @retval JAVACALL_OK               success
+ *         JAVACALL_FAIL
+ *         JAVACALL_INVALID_ARGUMENT
  */
 javacall_result javacall_media_create(int appID,
                                       int playerID,
