@@ -49,30 +49,6 @@ extern "C" {
 typedef unsigned short javacall_utf16;
 
 /**
- * @typedef javacall_uint8
- * @brief 8 bit unsigned interger type
- */
-typedef unsigned __int8 javacall_uint8;
-
-/**
- * @typedef javacall_uint16
- * @brief 16 bit unsigned interger type
- */
-typedef unsigned __int16 javacall_uint16;
-
-/**
- * @typedef javacall_uint32
- * @brief 32 bit unsigned interger type
- */
-typedef unsigned __int32 javacall_uint32;
-
-/**
- * @typedef javacall_uint64
- * @brief 64 bit unsigned integer type
- */
-typedef unsigned __int64 javacall_uint64;
-
-/**
  * @typedef javacall_int32
  * @brief 32 bit interger type
  */
@@ -85,19 +61,6 @@ typedef __int32 javacall_int32;
 typedef __int64 javacall_int64;
 
 /**
- * @typedef javacall_filename_string
- * @brief general file name string type, this type is null terminated string
- */
-typedef javacall_utf16* javacall_filename_string;
-
-/**
- * @typedef javacall_const_filename_string
- * @brief general constant file name string type, this type is constant null
- * terminated string
- */
-typedef const javacall_utf16* javacall_const_filename_string;
-
-/**
  * @def JAVACALL_MAX_FILE_NAME_LENGTH
  * Maximal length of filename supported 
  */
@@ -108,47 +71,6 @@ typedef const javacall_utf16* javacall_const_filename_string;
  * Maximal number of illegal chars
  */
 #define JAVACALL_MAX_ILLEGAL_FILE_NAME_CHARS  256
-
-/**
- * @def JAVACALL_MAX_ROOTS_LIST_LENGTH
- * Maximal length of a list of file system roots
- */
-#define JAVACALL_MAX_ROOTS_LIST_LENGTH  1024
-
-/**
- * @def JAVACALL_MAX_ROOT_PATH_LENGTH
- * Maximal length of a file system root path
- */
-#define JAVACALL_MAX_ROOT_PATH_LENGTH   256
-
-/**
- * @def JAVACALL_MAX_LOCALIZED_ROOTS_LIST_LENGTH
- * Maximal length of a list of localized names of file system roots
- */
-#define JAVACALL_MAX_LOCALIZED_ROOTS_LIST_LENGTH  1024
-
-/**
- * @def JAVACALL_MAX_LOCALIZED_DIR_NAME_LENGTH
- * Maximal length of a localized name of a special directory
- */
-#define JAVACALL_MAX_LOCALIZED_DIR_NAME_LENGTH    512
-
-/**
- * @def JAVACALL_PIM_MAX_ARRAY_ELEMENTS
- * 
- */
-#define JAVACALL_PIM_MAX_ARRAY_ELEMENTS (10)   
-/**
- * @def JAVACALL_PIM_MAX_ATTRIBUTES
- * 
- */
-#define JAVACALL_PIM_MAX_ATTRIBUTES     (15)
-/**
- * @def JAVACALL_PIM_MAX_FIELDS
- * 
- */
-#define JAVACALL_PIM_MAX_FIELDS         (19)
-
 /**
  * @}
  */
