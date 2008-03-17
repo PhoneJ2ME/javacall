@@ -29,10 +29,6 @@
 #include "javacall_events.h"
 #include "javacall_logging.h"
 
-#ifdef ENABLE_OUTPUT_REDIRECTION
-#include "io_sockets.h"
-#endif /* ENABLE_OUTPUT_REDIRECTION */
-
 #if ENABLE_JSR_120
 extern javacall_result finalize_wma_emulator();
 #endif
@@ -132,8 +128,6 @@ main(int argc, char *argv[]) {
     char *className        = NULL;
     char *classPath        = NULL;
     char *debugPort        = NULL;
-    int stdoutPort         = -1;
-    int stderrPort         = -1;
 
     /* uncomment this like to force the debugger to start */
     /* _asm int 3; */
@@ -215,11 +209,7 @@ main(int argc, char *argv[]) {
                 property_type = JAVACALL_INTERNAL_PROPERTY;
             }
             javacall_set_property(key, value, JAVACALL_TRUE,property_type);
-        } else if (strcmp(argv[i], "-profile") == 0) {
-                /* ROM profile name is passed here */ 
-                vmArgv[vmArgc++] = argv[i++];
-                vmArgv[vmArgc++] = argv[i];
-				} else if (strcmp(argv[i], "-monitormemory") == 0) {
+        } else if (strcmp(argv[i], "-monitormemory") == 0) {
             /* old argument  - ignore it */
         } else if (strcmp(argv[i], "-memory_profiler") == 0) {
 
@@ -260,16 +250,6 @@ main(int argc, char *argv[]) {
             i++;
             url = malloc(sizeof(char)*(strlen(argv[i])+1));
             strcpy(url, argv[i]);
-        } else if (strcmp(argv[i], "-stdoutport") == 0) {
-            if ((i + 1) < argc) {
-                ++i;
-                stdoutPort = atoi(argv[i]);
-            }
-        } else if (strcmp(argv[i], "-stderrport") == 0) {
-            if ((i + 1) < argc) {
-                ++i;
-                stderrPort = atoi(argv[i]);
-            }
         } else if (strcmp(argv[i], "-descriptor") == 0) {
 
             /* run local application */
@@ -399,7 +379,7 @@ main(int argc, char *argv[]) {
 
     if (vmArgc > 0 ) {
         /* set VM args */
-	     javanotify_set_vm_args(vmArgc, vmArgv);
+        javanotify_set_vm_args(vmArgc, vmArgv);
     }
 
     if (heapsize != -1) {
@@ -503,24 +483,7 @@ main(int argc, char *argv[]) {
 
     InitializeLimeEvents();
 
-    if ((stdoutPort != -1) || (stderrPort != -1)) {
-#ifdef ENABLE_OUTPUT_REDIRECTION
-        /* enable redirection of output to sockets */
-        SIOInit(stdoutPort, stderrPort);
-#else /* ENABLE_OUTPUT_REDIRECTION */
-        javautil_debug_print(JAVACALL_LOG_INFORMATION, "main",
-                             "Output redirection is not supported.");
-#endif /* ENABLE_OUTPUT_REDIRECTION */
-    }
-
     JavaTask();
-
-#ifdef ENABLE_OUTPUT_REDIRECTION
-    if ((stdoutPort != -1) || (stderrPort != -1)) {
-        /* stop redirection of output to sockets */
-        SIOStop();
-    }
-#endif /* ENABLE_OUTPUT_REDIRECTION */
 
     javacall_events_finalize();
 
