@@ -1,32 +1,36 @@
 /*
  * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation. 
- * 
+ * 2 only, as published by the Free Software Foundation.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt). 
- * 
+ * included at /legal/license.txt).
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA 
- * 
+ * 02110-1301 USA
+ *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions. 
- */ 
+ * information or have any questions.
+ */
 
 #include "multimedia.h"
 
 #define INTERNAL_SOUNDBANK      0
 #include "mm_qsound_audio.h"
+
+#ifdef ENABLE_AMR
 #include "amr/AMRDecoder.h"
+#endif // ENABLE_AMR
+
 #include "javacall_memory.h"
 
 #if( 1 == INTERNAL_SOUNDBANK )
@@ -1127,6 +1131,7 @@ static javacall_result audio_qs_acquire_device(javacall_handle handle)
                 h->wav.channels, h->wav.bits);
         break;
 
+#ifdef ENABLE_AMR
         case JC_FMT_AMR:
             if( NULL != h->wav.stream )
             {
@@ -1172,6 +1177,7 @@ static javacall_result audio_qs_acquire_device(javacall_handle handle)
                 JC_MM_ASSERT( MQ234_ERROR_NO_ERROR == e );
             }
         break;
+#endif // ENABLE_AMR
 
         default:
             JC_MM_DEBUG_PRINT1(
@@ -1190,8 +1196,8 @@ static javacall_result audio_qs_release_device(javacall_handle handle){
     return JAVACALL_OK;
 }
 
-#define DEFAULT_BUFFER_SIZE  1000 * 1024
-#define DEFAULT_PACKET_SIZE  1024
+#define DEFAULT_BUFFER_SIZE  100 * 1024
+#define DEFAULT_PACKET_SIZE  4096
 static javacall_result audio_qs_get_java_buffer_size(javacall_handle handle,
                                                      long* java_buffer_size,
                                                      long* first_data_size)
