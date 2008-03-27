@@ -31,9 +31,8 @@
  * Post native media event to Java event handler
  * 
  * @param type          Event type
- * @param appID         Application ID that came from javacall_media_create function
+ * @param isolateId     Isolate ID that came from javacall_media_create function
  * @param playerId      Player ID that came from javacall_media_create function
- * @param status        Status of completed operation
  * @param data          Data that will be carried with this notification
  *                      - JAVACALL_EVENT_MEDIA_END_OF_MEDIA
  *                          data = Media time when the Player reached end of media and stopped.
@@ -45,8 +44,6 @@
  *                          data = None.
  *                      - JAVACALL_EVENT_MEDIA_DEVICE_UNAVAILABLE   
  *                          data = None.
- *                      - JAVACALL_EVENT_MEDIA_NEED_MORE_MEDIA_DATA
- *                          data = None.
  *                      - JAVACALL_EVENT_MEDIA_BUFFERING_STARTED
  *                          data = Designating the media time when the buffering is started.
  *                      - JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED
@@ -57,17 +54,16 @@
  *                          data = None.
  */
 void javanotify_on_media_notification(javacall_media_notification_type type,
-                                      int appID,
+                                      int isolateId,
                                       int playerId, 
-                                      javacall_result status,
                                       void *data) {
     struct {
     	int     event_type;
-        int     appId;
+        int     isolateId;
         int     type;
         int     playerId;
         long    data;
-    } event = {135, appID, type, playerId, *((long *)data)};
+    }event = {135, isolateId, type, playerId, *((long *)data)};
 
     javacall_event_send((unsigned char *)&event, sizeof(event));
 }

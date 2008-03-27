@@ -23,12 +23,12 @@
  * information or have any questions.
  */
 
+/**
+ * @file
+ *
+ *
+ */
 
-#ifndef __DEFS_H
-#define __DEFS_H
+#include "porting_logging.h"
 
 static char print_buffer[256];
-
-#endif /* __DEFS_H */
-
-
