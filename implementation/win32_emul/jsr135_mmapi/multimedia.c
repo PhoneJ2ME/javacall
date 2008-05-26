@@ -53,8 +53,8 @@ static javacall_media_configuration g_cfg;
 javacall_result javacall_media_get_configuration(const javacall_media_configuration** cfg)
 {
     g_cfg.audioEncoding         = "encoding=pcm&rate=22050&bits=16&channels=1";
-    g_cfg.videoEncoding         = "encoding=rgb565";
-    g_cfg.videoSnapshotEncoding = "encoding=jpeg";
+    g_cfg.videoEncoding         = NULL;
+    g_cfg.videoSnapshotEncoding = NULL;
 
     g_cfg.supportMixing         = JAVACALL_TRUE;
     g_cfg.supportRecording      = JAVACALL_TRUE;
@@ -220,14 +220,14 @@ javacall_result fmt_str2mime(
 
 //=============================================================================
 
-#ifdef ENABLE_MMAPI_LIME
 extern media_interface g_audio_itf;
-extern media_interface g_video_itf;
-#endif ENABLE_MMAPI_LIME
-
 extern media_interface g_qsound_itf;
 extern media_interface g_amr_audio_itf;
 extern media_interface g_qsound_interactive_midi_itf;
+extern media_interface g_video_itf;
+//extern media_interface g_tone_itf;
+extern media_interface g_camera_itf;
+//extern media_interface g_interactive_midi_itf;
 extern media_interface g_record_itf;
 extern media_interface g_fake_radio_itf;
 
@@ -241,20 +241,22 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
     case JC_FMT_MPEG_4_AVC:
     case JC_FMT_VIDEO_3GPP:
     case JC_FMT_MOV:
-        return &g_video_itf;
-
-    case JC_FMT_MPEG1_LAYER3:
-    case JC_FMT_MPEG1_LAYER3_PRO:
-    case JC_FMT_MPEG2_AAC:
-    case JC_FMT_MPEG4_HE_AAC:
-        return &g_audio_itf;
-#endif // ENABLE_MMAPI_LIME
+        return &g_video_itf;    // was: VIDEO_MPEG4, VIDEO_3GPP, CAPTURE_VIDEO, VIDEO_MPEG, VIDEO_GIF
+ #endif /* ENABLE_MMAPI_LIME */
 
     case JC_FMT_TONE:
     case JC_FMT_MIDI:
     case JC_FMT_SP_MIDI:
     case JC_FMT_MS_PCM:
-        return &g_qsound_itf;
+        return &g_qsound_itf;   // was: AUDIO_MIDI, AUDIO_WAVE
+
+#ifdef ENABLE_MMAPI_LIME        
+    case JC_FMT_MPEG1_LAYER3:
+    case JC_FMT_MPEG1_LAYER3_PRO:
+    case JC_FMT_MPEG2_AAC:
+    case JC_FMT_MPEG4_HE_AAC:
+        return &g_audio_itf;
+#endif /* ENABLE_MMAPI_LIME */
 
 #if( defined( ENABLE_AMR ) )
     case JC_FMT_AMR:
@@ -267,9 +269,15 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
   #endif // AMR_USE_**
 #endif // ENABLE_AMR
 
+    //case JC_FMT_TONE:
+        //return &g_tone_itf;     // AUDIO_TONE
+
     default:
         return NULL;
     }
+
+    // &g_record_itf,              // JAVACALL_CAPTURE_AUDIO,     /** Audio capture   */
+    // &g_interactive_midi_itf,    // JAVACALL_INTERACTIVE_MIDI,  /** Interactive MIDI */
 }
 
 /* Media native API interfaces */
@@ -374,46 +382,6 @@ javacall_handle javacall_media_create2(int playerId, javacall_media_format_type 
 #define DEVICE_TONE_LOCATOR     L"device://tone"
 #define DEVICE_MIDI_LOCATOR     L"device://midi"
 
-/**
- * This function is called to get all the necessary return values from 
- * the JavaCall Media functions that can run in asynchronous mode.
- * This function is called every time the following situation occurs.
- * A JSR-135 JavaCall API function returned JAVACALL_WOULD_BLOCK and continued
- * its 
- * execution in asynchronous mode. Then it finished the execution and send the
- * corresponding event to inform Java layer about it. Such events are described
- * in the description of the enum javacall_media_notification_type after the
- * event 
- * JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER. After the event Java
- * layer calls javacall_media_get_event_data() to get the return values.
- *
- * @param handle        handle to the native player that the function having
- *                      returned JAVACALL_WOULD_BLOCK was called for.
- * @param eventType     the type of the event, one of 
- *                      javacall_media_notification_type (but greater than 
- *                      JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER)
- * @param pResult       The event data passed as the param \a data to the
- *                      function javanotify_on_media_notification() while
- *                      sending the event
- * @param numArgs       the number of return values to get
- * @param args          the pointer to the array to copy the return values to
- *
- * @retval JAVACALL_INVALID_ARGUMENT    bad arguments or the function should
- *                                      not be called now for this native
- *                                      player and eventType (no event has been
- *                                      sent, see the function description)
- * @retval JAVACALL_OK                  Success
- * @retval JAVACALL_FAIL                General failure
- * @see JAVACALL_WOULD_BLOCK
- * @see javacall_media_notification_type
- * @see JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER
- */
-javacall_result javacall_media_get_event_data(javacall_handle handle, 
-                    int eventType, void *pResult, int numArgs, void *args[])
-{
-    return JAVACALL_INVALID_ARGUMENT;
-}
-
 javacall_result javacall_media_create(int appId,
                                       int playerId,
                                       javacall_const_utf16_string uri, 
@@ -449,15 +417,13 @@ javacall_result javacall_media_create(int appId,
             pPlayer->mediaItfPtr      = &g_record_itf;
             pPlayer->downloadByDevice = JAVACALL_TRUE;
         }
-#ifdef ENABLE_MMAPI_LIME
         else if( 0 == _wcsnicmp( uri, VIDEO_CAPTURE_LOCATOR, 
                            min( (long)wcslen( VIDEO_CAPTURE_LOCATOR ), uriLength ) ) )
         {
             pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO;
-            pPlayer->mediaItfPtr      = &g_video_itf;
+            pPlayer->mediaItfPtr      = &g_camera_itf;
             pPlayer->downloadByDevice = JAVACALL_TRUE;
         }
-#endif // ENABLE_MMAPI_LIME
         else if( 0 == _wcsnicmp( uri, RADIO_CAPTURE_LOCATOR, 
                            min( (long)wcslen( RADIO_CAPTURE_LOCATOR ), uriLength ) ) )
         {

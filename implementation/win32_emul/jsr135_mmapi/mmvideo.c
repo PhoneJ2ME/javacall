@@ -406,23 +406,6 @@ static javacall_result video_get_video_snapshot_data(javacall_handle handle, cha
     return JAVACALL_OK;
 }
 
-static javacall_result video_set_video_fullscreenmode( javacall_handle handle, javacall_bool fullScreenMode )
-{
-    audio_handle* pHandle = (audio_handle*)handle;
-    static LimeFunction *f = NULL;
-    int res = 0;
-
-    if (f == NULL) {
-        f = NewLimeFunction(LIME_MMAPI_PACKAGE,
-                        LIME_MMAPI_CLASS,
-                        "setDisplayFullScreen");
-    }
-    
-    f->call(f, &res, pHandle->hWnd, fullScreenMode);
-
-    return JAVACALL_OK; 
-}
-
 static javacall_result map_frame_to_time(javacall_handle handle, 
                                                  long frameNum, long* ms) {
     audio_handle* pHandle = (audio_handle*)handle;
@@ -525,6 +508,20 @@ static javacall_result video_get_buffer_address(javacall_handle handle,
     return audio_get_buffer_address(handle, buffer, max_size);
 }
 
+static javacall_result video_get_format(javacall_handle handle, jc_fmt* fmt)
+{
+    audio_handle* pHandle = (audio_handle *) handle;
+    
+    if (pHandle->isBuffered) {
+        *fmt = pHandle->mediaType;
+    }
+    else {
+        *fmt = JC_FMT_UNKNOWN;
+    }
+    
+    return JAVACALL_OK;
+}
+
 static javacall_result video_set_video_color_key(
             javacall_handle handle, javacall_bool on, javacall_pixel color) {
     
@@ -546,7 +543,7 @@ static javacall_result video_set_video_color_key(
  */
 static media_basic_interface _video_basic_itf = {
     video_create,
-    NULL,
+    video_get_format,
     NULL, // get_player_controls
     video_close,
     video_destroy,
@@ -578,7 +575,7 @@ static media_video_interface _video_video_itf = {
     video_set_video_visible,
     video_set_video_location,
     video_set_video_color_key,
-    video_set_video_fullscreenmode,
+    NULL
 };
 
 /**

@@ -43,7 +43,6 @@
 #define LIME_MMAPI_PACKAGE "com.sun.mmedia"
 #define LIME_MMAPI_CLASS   "JavaCallBridge"
 
-#define DEFAULT_BUFFER_SIZE  1024 * 1024 // default buffer size 1 MB
 
 /**
  * 
@@ -133,22 +132,20 @@ javacall_result audio_get_duration(javacall_handle handle, long* ms) {
     return JAVACALL_OK;
 }
 
-
-
 javacall_result audio_get_java_buffer_size(javacall_handle handle,
         long* java_buffer_size, long* first_data_size) 
 {
     audio_handle* pHandle = (audio_handle *) handle;
     
-    if (pHandle->wholeContentSize == -1) {
-        *java_buffer_size = DEFAULT_BUFFER_SIZE;
-        *first_data_size  = DEFAULT_BUFFER_SIZE;
-        pHandle->wholeContentSize = DEFAULT_BUFFER_SIZE;
-    } else {
-        *java_buffer_size = pHandle->wholeContentSize;
+    JC_MM_ASSERT( -1 != pHandle->wholeContentSize );
+    
+    *java_buffer_size = pHandle->wholeContentSize;
+    if (pHandle->buffer == NULL) {
         *first_data_size  = pHandle->wholeContentSize;
+    } else {
+        *first_data_size  = 0;
     }
-        
+
     return JAVACALL_OK;
 }
 
@@ -211,19 +208,10 @@ static void CALLBACK audio_timer_callback(UINT uID, UINT uMsg,
             pHandle->timerId = 0;
             pHandle->offset = 0;
             timeKillEvent(uID);
-
-            if( JC_FMT_CAPTURE_VIDEO == pHandle->mediaType ) {
-                // emulated camera loops ininitely,
-                // but EOM must not be sent
-                audio_set_time( (javacall_handle)dwUser, &(pHandle->offset) );
-                audio_start( (javacall_handle)dwUser );
-                return;
-            } else {
-                JC_MM_DEBUG_PRINT1("[jc_media] javanotify_on_media_notification %d\n", pHandle->playerId);
-                javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_END_OF_MEDIA,
-                                                 pHandle->isolateId, pHandle->playerId, 
-                                                 JAVACALL_OK, (void*)pHandle->duration);
-            }
+            JC_MM_DEBUG_PRINT1("[jc_media] javanotify_on_media_notification %d\n", pHandle->playerId);
+            javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_END_OF_MEDIA,
+                                             pHandle->isolateId, pHandle->playerId, 
+                                             JAVACALL_OK, (void*)pHandle->duration);
         }
     }
 }
@@ -251,7 +239,7 @@ static javacall_handle audio_create(int appId, int playerId,
     char *buff = MALLOC(len);
 
     memset(pHandle,0,sizeof(audio_handle));
-
+    
     if (buff == NULL) {
         return NULL;
     }
@@ -713,3 +701,4 @@ media_interface g_audio_itf = {
     NULL,
     NULL
 }; 
+
