@@ -49,67 +49,67 @@ extern "C" {
  * Returns the public identifier associated with the entity, if specified. If the 
  * public identifier was not specified, this is <code>NULL</code>.
  * 
- * Note: If ret_value_len is less then length of the returned string this function 
- *       has to return with JAVACALL_OUT_OF_MEMORY code and fill ret_value_len 
+ * Note: If retValueLen is less then length of the returned string this function 
+ *       has to return with JAVACALL_OUT_OF_MEMORY code and fill retValueLen 
  *       with actual length of the returned string.
  *
  * @param handle Pointer to the object representing this entity.
- * @param ret_value The public identifier associated with the entity, or <code>NULL</code>
- * @param ret_value_len Length of the returned string
+ * @param retValue The public identifier associated with the entity, or <code>NULL</code>
+ * @param retValueLen Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
- *                                specified in ret_value_len,
+ *                                specified in retValueLen,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
 javacall_dom_entity_get_public_id(javacall_handle handle,
-                                  /* OUT */ javacall_utf16_string ret_value,
-                                  /* INOUT */ javacall_uint32* ret_value_len);
+                                  /* OUT */ javacall_utf16_string retValue,
+                                  /* INOUT */ javacall_uint32* retValueLen);
 
 /**
  * Returns the system identifier associated with the entity, if specified. If the 
  * system identifier was not specified, this is <code>NULL</code>.
  * 
- * Note: If ret_value_len is less then length of the returned string this function 
- *       has to return with JAVACALL_OUT_OF_MEMORY code and fill ret_value_len 
+ * Note: If retValueLen is less then length of the returned string this function 
+ *       has to return with JAVACALL_OUT_OF_MEMORY code and fill retValueLen 
  *       with actual length of the returned string.
  *
  * @param handle Pointer to the object representing this entity.
- * @param ret_value The system identifier associated with the entity or <code>NULL</code>
- * @param ret_value_len Length of the returned string
+ * @param retValue The system identifier associated with the entity or <code>NULL</code>
+ * @param retValueLen Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
- *                                specified in ret_value_len,
+ *                                specified in retValueLen,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
 javacall_dom_entity_get_system_id(javacall_handle handle,
-                                  /* OUT */ javacall_utf16_string ret_value,
-                                  /* INOUT */ javacall_uint32* ret_value_len);
+                                  /* OUT */ javacall_utf16_string retValue,
+                                  /* INOUT */ javacall_uint32* retValueLen);
 
 /**
  * Returns for unparsed entities, the name of the notation for the entity. For 
  * parsed entities, this is <code>NULL</code>. 
  * 
- * Note: If ret_value_len is less then length of the returned string this function 
- *       has to return with JAVACALL_OUT_OF_MEMORY code and fill ret_value_len 
+ * Note: If retValueLen is less then length of the returned string this function 
+ *       has to return with JAVACALL_OUT_OF_MEMORY code and fill retValueLen 
  *       with actual length of the returned string.
  *
  * @param handle Pointer to the object representing this entity.
- * @param ret_value the name of the notation for the entity or <code>NULL</code>
- * @param ret_value_len Length of the returned string
+ * @param retValue the name of the notation for the entity or <code>NULL</code>
+ * @param retValueLen Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
- *                                specified in ret_value_len,
+ *                                specified in retValueLen,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
 javacall_dom_entity_get_notation_name(javacall_handle handle,
-                                      /* OUT */ javacall_utf16_string ret_value,
-                                      /* INOUT */ javacall_uint32* ret_value_len);
+                                      /* OUT */ javacall_utf16_string retValue,
+                                      /* INOUT */ javacall_uint32* retValueLen);
 
 /** 
  * Deletes object representing this entity
