@@ -496,9 +496,7 @@ int handleNetworkStreamEvents(WPARAM wParam,LPARAM lParam) {
     return 0;
 }
 
-#if ENABLE_JSR_120
 extern javacall_result try_process_wma_emulator(javacall_handle handle);
-#endif
 
 /**
  *

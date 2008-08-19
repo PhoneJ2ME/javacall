@@ -397,9 +397,9 @@ main(int argc, char *argv[]) {
                 i++;
                 /* It is a CLDC arg, add to CLDC arguments list */
                 /* vmArgv[vmArgc++] = argv[i]; */
-                javacall_set_property("VmDebuggerPort",
+                javacall_set_property("vmdebuggerport",
                                       argv[i], JAVACALL_TRUE,
-                                      JAVACALL_INTERNAL_PROPERTY);
+                                      JAVACALL_APPLICATION_PROPERTY);
                 debugPort = malloc(sizeof(char)*(strlen(argv[i])+1));
                 strcpy(debugPort, argv[i]);
             }

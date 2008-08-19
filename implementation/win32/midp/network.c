@@ -682,10 +682,8 @@ char* getIPBytes_nonblock(char *hostname) {
 	return pHost->h_addr;
 }
 
-#if ENABLE_JSR_120
 extern javacall_result init_wma_emulator();
 extern javacall_result finalize_wma_emulator();
-#endif
 
 static int netinit = 0;
 /**
