@@ -1,22 +1,22 @@
 /*
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
  * 2 only, as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included at /legal/license.txt).
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- * 
+ *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
@@ -36,31 +36,7 @@
 #include "javacall_defs.h"
 
 /*************************************************************************************************
-*  NAMS util related 
-*************************************************************************************************/
-typedef struct ContentNode {
-    char* content;
-    struct ContentNode* next;
-
-} contentNode;
-
-typedef struct ContentList {
-    int itemCount;
-    struct ContentNode* curr;
-    struct ContentNode* head;
-    struct ContentNode* tail;
-
-} contentList;
-
-
-void nams_content_list_init(contentList* pList);
-javacall_result nams_content_list_add(contentList* pList, char* text);
-char* nams_content_list_get_next_line(contentList* pList);
-void nams_content_list_release(contentList* pList);
-javacall_result nams_string_to_utf16(char* srcStr, int srcSize, javacall_utf16** destStr, int destSize);
-
-/*************************************************************************************************
-*  Midlet list related 
+*  Midlet list related
 *************************************************************************************************/
 typedef struct midletNode {
     javacall_suite_id           suiteID;
@@ -86,16 +62,15 @@ javacall_result nams_get_midlet_permissions(int index, javacall_ams_permission_s
 javacall_result nams_set_midlet_permission(int index, javacall_ams_permission permission, javacall_ams_permission_val value);
 javacall_result nams_get_midlet_domain(int index, javacall_ams_domain* domain);
 int nams_get_current_midlet_count();
-javacall_result nams_get_midlet_classname(int index, contentList* className);
+javacall_result nams_get_midlet_classname(int index, char* className);
 char* nams_trans_state(javacall_midlet_state state);
-char* nams_trans_ui_state(javacall_midlet_state state);
 void nams_set_midlet_request_foreground(int index);
 javacall_result nams_if_midlet_exist(int index);
 void nams_set_midlet_static_info(int appID, MidletNode* pInfo);
 javacall_bool nams_get_midlet_requestforeground(int index);
 
 /*************************************************************************************************
-*  NAMS data base related 
+*  NAMS data base related
 *************************************************************************************************/
 javacall_result nams_db_init();
 javacall_result nams_db_allocate_suiteid(javacall_suite_id* suiteID);
@@ -103,26 +78,25 @@ javacall_result nams_db_get_suiteid(char* textLine, javacall_suite_id* suiteID);
 javacall_result nams_db_get_suitepath(char* textLine, char* outText);
 javacall_result nams_db_open(int flag, javacall_handle* handle);
 javacall_result nams_db_close(javacall_handle handle);
-javacall_result nams_db_get_app_list(contentList* appList, int* entryCount);
+javacall_result nams_db_get_app_list(char appList[][JAVACALL_MAX_FILE_NAME_LENGTH], int* entryCount);
 javacall_result nams_db_read_file(char** destBuffer, long* size);
 javacall_result nams_db_read_line(char** dbBuf, char** textLine, int* lineSize);
 javacall_result nams_db_remove_suite_home(int removeID);
-javacall_result nams_db_get_suite_home(javacall_suite_id suiteID, 
+javacall_result nams_db_get_suite_home(javacall_suite_id suiteID,
                                                   javacall_utf16* outPath, int* pathLen);
-javacall_result nams_db_get_root(javacall_utf16* outPath, int* pathLen);
 javacall_result nams_db_remove_line(char** dbBuf, int lineNum, long* outSize, int* outID);
-javacall_result nams_db_install_app(char* textLine, javacall_utf16_string jarName);
+javacall_result nams_db_install_app(char* textLine);
 javacall_result nams_db_remove_app(int itemIndex);
 
 /*************************************************************************************************
-*  NAMS JAD parser related 
+*  NAMS JAD parser related
 *************************************************************************************************/
 javacall_result nams_get_classname_from_jad(const javacall_utf16* jadPath, int jadPathLen, char* pClassName, int mIndex);
-javacall_result nams_get_jarname_from_jad(const char* jadPath, char** jarName);
+javacall_result nams_get_jarname_from_jad(const char* jadPath, char* jarName);
 char* string_cat_num(char* propName, int mIndex);
 javacall_result javautil_string_index_of_ex(char* str, char c, int times, /* OUT */ int* index);
-javacall_result nams_get_midlets_from_jad(const javacall_utf16* jadPath, int jadPathLen, 
-                                                    contentList* pMidlets, int* count);
-javacall_result nams_get_classname_from_textline(char* textLine, char** className);
+javacall_result nams_get_midlets_from_jad(const javacall_utf16* jadPath, int jadPathLen,
+                                                char pMidlets[][JAVACALL_MAX_FILE_NAME_LENGTH], int* count);
+javacall_result nams_get_classname_from_textline(char* textLine, char* className);
 
 #endif /* _NAMS_H_ */

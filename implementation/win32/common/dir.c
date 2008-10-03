@@ -366,23 +366,16 @@ javacall_result javacall_dir_get_root_path(javacall_utf16* /* OUT */ rootPath,
 {
     wchar_t chSep = javacall_get_file_separator();
     wchar_t filesep[2] = {chSep, (wchar_t)0};
-    javacall_result res;
     int len;
 
-    if (rootPathLen == NULL) {
-        return JAVACALL_FAIL;
-    }
-    
-    len = *rootPathLen;
-    res = helper_dir_get_home_path(rootPath, &len);
+    javacall_result res = helper_dir_get_home_path(rootPath,&len);
 
     if (res != JAVACALL_OK) {
         return res;
     }
 
-    if (len + (int)wcslen(APPDB_DIR) >= *rootPathLen) {
+    if (len + wcslen(APPDB_DIR) >= rootPathLen)
         return JAVACALL_FAIL;
-    }
 
     wcscat(rootPath, filesep);
     wcscat(rootPath, APPDB_DIR);
@@ -403,27 +396,20 @@ javacall_result javacall_dir_get_root_path(javacall_utf16* /* OUT */ rootPath,
  *         <tt>JAVACALL_FAIL</tt> if an error occured
  */
 javacall_result javacall_dir_get_config_path(javacall_utf16* /* OUT */ configPath, 
-                                             int* /* IN | OUT */ configPathLen)
+                                                    int* /* IN | OUT */ configPathLen)
 {
     wchar_t chSep = javacall_get_file_separator();
     wchar_t filesep[2] = {chSep, (wchar_t)0};
-    javacall_result res;
     int len;
+    javacall_result res = helper_dir_get_home_path(configPath,&len);
 
-    if (configPathLen == NULL) {
-        return JAVACALL_FAIL;
-    }
-    
-    len = *configPathLen;
-    res = helper_dir_get_home_path(configPath, &len);
 
     if (res != JAVACALL_OK) {
         return res;
     }
 
-    if (len + (int)wcslen(CONFIG_DIR) >= *configPathLen) {
+    if (len + wcslen(CONFIG_DIR) >= configPathLen)
         return JAVACALL_FAIL;
-    }
 
     wcscat(configPath, filesep);
     wcscat(configPath, CONFIG_DIR);

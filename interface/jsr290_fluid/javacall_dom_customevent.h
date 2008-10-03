@@ -73,16 +73,15 @@ javacall_dom_customevent_init_custom_event_ns(javacall_handle handle,
                                               javacall_bool cancelable_arg);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this customevent
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this customevent.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_customevent_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_customevent_finalize(javacall_handle handle);
 
 
 /** @} */

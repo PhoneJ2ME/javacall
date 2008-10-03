@@ -108,16 +108,15 @@ javacall_dom_processinginstruction_set_data(javacall_handle handle,
                                             javacall_const_utf16_string data);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this processinginstruction
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this processinginstruction.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_processinginstruction_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_processinginstruction_finalize(javacall_handle handle);
 
 
 /** @} */

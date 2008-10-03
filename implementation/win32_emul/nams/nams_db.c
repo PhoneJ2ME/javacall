@@ -1,22 +1,22 @@
 /*
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
  * 2 only, as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included at /legal/license.txt).
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- * 
+ *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
@@ -27,9 +27,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "nams.h"
-#include "javacall_file.h"
+#include "file.h"
 #include "javacall_logging.h"
-/* #include "javacall_file.h" */
+#include "javacall_file.h"
 #include "javautil_jad_parser.h"
 #include "javautil_string.h"
 #include "javacall_memory.h"
@@ -51,7 +51,7 @@ javacall_result nams_db_init()
     int lineSize;
     char* startAddr;
 
-    if (nams_db_open(JAVACALL_FILE_O_CREAT | JAVACALL_FILE_O_RDONLY, 
+    if (nams_db_open(JAVACALL_FILE_O_CREAT | JAVACALL_FILE_O_RDONLY,
                      &dbHandle) != JAVACALL_OK)
     {
         return JAVACALL_FAIL;
@@ -107,19 +107,19 @@ javacall_result nams_db_get_suiteid(char* textLine, javacall_suite_id* suiteID)
 
     // find the index of ':'
     res = javautil_string_index_of(textLine, ':', &index);
-    if ((res != JAVACALL_OK) || (index <= 0)) 
+    if ((res != JAVACALL_OK) || (index <= 0))
     {
         return res;
     }
 
     // get sub string of suite id
     res = javautil_string_substring(textLine, 0, index, &strSuiteID);
-    if (res != JAVACALL_OK || strSuiteID == NULL) 
+    if (res != JAVACALL_OK || strSuiteID == NULL)
     {
         return res;
     }
     res = javautil_string_trim(strSuiteID);
-    if (res != JAVACALL_OK) 
+    if (res != JAVACALL_OK)
     {
         return res;
     }
@@ -141,20 +141,20 @@ javacall_result nams_db_get_suitepath(char* textLine, char* outText)
 
     // find the index of ':'
     res = javautil_string_index_of(textLine, ':', &index);
-    if ((res != JAVACALL_OK) || (index <= 0)) 
+    if ((res != JAVACALL_OK) || (index <= 0))
     {
         return res;
     }
 
     // skip white space between jad property name and value
-    while (*(textLine+index+1) == SPACE) 
+    while (*(textLine+index+1) == SPACE)
     {
         index++;
     }
 
     // get sub string of suite path
     res = javautil_string_substring(textLine, index+1, strlen(textLine), &newString);
-    if (res != JAVACALL_OK || newString == NULL) 
+    if (res != JAVACALL_OK || newString == NULL)
     {
         return res;
     }
@@ -191,7 +191,7 @@ javacall_result nams_db_open(int flags, javacall_handle* handle)
 
     if ((fd = _open(NAMS_DB_FILE, oFlag, creationMode)) == -1)
     {
-        javacall_print("[NAMS] Failed to open application db file");
+        javautil_debug_print (JAVACALL_LOG_ERROR, "nams_db", "[NAMS] Failed to open application db file");
         return JAVACALL_FAIL;
     }
     *handle = (void *)fd;
@@ -207,12 +207,13 @@ javacall_result nams_db_close(javacall_handle handle)
     return JAVACALL_OK;
 }
 
-javacall_result nams_db_get_app_list(contentList* appList, int* entryCount)
+javacall_result nams_db_get_app_list(char appList[][JAVACALL_MAX_FILE_NAME_LENGTH], int* entryCount)
 {
     char* dbBuf;
     char* startAddress;
     char* line;
     int lineSize;
+    int i=0;
     int fileSize;
 
     if (nams_db_read_file(&dbBuf, &fileSize) != JAVACALL_OK)
@@ -224,7 +225,7 @@ javacall_result nams_db_get_app_list(contentList* appList, int* entryCount)
 
     while (nams_db_read_line(&dbBuf, &line, &lineSize) != JAVACALL_END_OF_FILE)
     {
-        nams_content_list_add(appList, line);
+        strcpy(appList[i++], line);
         (*entryCount) ++;
         javacall_free(line);
     }
@@ -248,7 +249,7 @@ javacall_result nams_db_read_file(char** destBuffer, long* size)
 
     // get the open db file size
     fileSize = (long)javacall_file_sizeofopenfile(dbHandle);
-    if (-1L == fileSize) 
+    if (-1L == fileSize)
     {
         nams_db_close(dbHandle);
         return JAVACALL_IO_ERROR;
@@ -256,7 +257,7 @@ javacall_result nams_db_read_file(char** destBuffer, long* size)
 
     // allocate a buffer to hold the db file contents
     fileBuffer = (char*)javacall_malloc(fileSize+1);
-    if (fileBuffer == NULL) 
+    if (fileBuffer == NULL)
     {
         nams_db_close(dbHandle);
         return JAVACALL_OUT_OF_MEMORY;
@@ -264,7 +265,7 @@ javacall_result nams_db_read_file(char** destBuffer, long* size)
     memset(fileBuffer, 0, (fileSize+1));
 
     bytesRead = javacall_file_read(dbHandle, (unsigned char*)fileBuffer, fileSize);
-    if ((bytesRead <= 0) || (bytesRead != fileSize)) 
+    if ((bytesRead <= 0) || (bytesRead != fileSize))
     {
         javacall_free(fileBuffer);
         nams_db_close(dbHandle);
@@ -288,7 +289,7 @@ javacall_result nams_db_read_line(char** dbBuf, char** textLine, int* lineSize)
     *textLine = NULL;
     *lineSize = -1;
 
-    if (!(*pBuf)) 
+    if (!(*pBuf))
     {
         return JAVACALL_END_OF_FILE;
     }
@@ -306,16 +307,16 @@ javacall_result nams_db_read_line(char** dbBuf, char** textLine, int* lineSize)
 
     lineStart = pBuf;
 
-    while (*pBuf) 
+    while (*pBuf)
     {
         charCount++;
         pBuf++;
 
         /* reached the end of the line */
-        if (javautil_is_new_line(pBuf)) 
+        if (javautil_is_new_line(pBuf))
         {
             /* if not end of file, point to the next jad file line */
-            if (*(pBuf+1)) 
+            if (*(pBuf+1))
             {
                 pBuf++;
                 break;
@@ -326,7 +327,7 @@ javacall_result nams_db_read_line(char** dbBuf, char** textLine, int* lineSize)
     *dbBuf = pBuf; // points to the next line
 
     line = (char*)javacall_malloc(charCount + 1);
-    if (line == NULL) 
+    if (line == NULL)
     {
         return JAVACALL_OUT_OF_MEMORY;
     }
@@ -423,12 +424,13 @@ javacall_result nams_db_remove_suite_home(int removeID)
 
 }
 
-javacall_result nams_db_get_suite_home(javacall_suite_id suiteID, 
+javacall_result nams_db_get_suite_home(javacall_suite_id suiteID,
                                                   javacall_utf16* outPath, int* pathLen)
 {
     char dirName[JAVACALL_MAX_FILE_NAME_LENGTH*2];
-    javacall_utf16* uDirName;
+    javacall_utf16 uDirName[JAVACALL_MAX_FILE_NAME_LENGTH*2];
     char strID[10];
+    int len;
 
     GetCurrentDirectory(JAVACALL_MAX_FILE_NAME_LENGTH, dirName);
 
@@ -436,48 +438,20 @@ javacall_result nams_db_get_suite_home(javacall_suite_id suiteID,
     _itoa(suiteID, strID, 10);
     strcat(dirName, strID);
 
-    // add back slash
-    strcat(dirName, "\\");
-
-    if (nams_string_to_utf16(dirName, strlen(dirName), &uDirName, strlen(dirName)) 
-        != JAVACALL_OK)
+    len = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dirName, strlen(dirName)*2,
+                              uDirName, JAVACALL_MAX_FILE_NAME_LENGTH);
     {
-        return JAVACALL_FAIL;
+        javautil_debug_print (JAVACALL_LOG_ERROR, "nams_db", "[NAMS] nams_db MultiByteToWideChar error\n");
     }
+    uDirName[len] = 0;
 
     memcpy(outPath, uDirName, (strlen(dirName)+1)*sizeof(javacall_utf16));
     *pathLen = (strlen(dirName)+1)*sizeof(javacall_utf16);
 
-    javacall_free(uDirName);
-
     return JAVACALL_OK;
 }
 
-javacall_result nams_db_get_root(javacall_utf16* outPath, int* pathLen)
-{
-    char dirName[JAVACALL_MAX_FILE_NAME_LENGTH*2];
-    javacall_utf16* uDirName;
-
-    GetCurrentDirectory(JAVACALL_MAX_FILE_NAME_LENGTH, dirName);
-
-    // add back slash
-    strcat(dirName, "\\");
-
-    if (nams_string_to_utf16(dirName, strlen(dirName), &uDirName, strlen(dirName))
-         != JAVACALL_OK)
-    {
-        return JAVACALL_FAIL;
-    }
-
-    memcpy(outPath, uDirName, (strlen(dirName)+1)*sizeof(javacall_utf16));
-    *pathLen = (strlen(dirName)+1)*sizeof(javacall_utf16);
-
-    javacall_free(uDirName);
-
-    return JAVACALL_OK;
-}
-
-javacall_result nams_db_install_app(char* textLine, javacall_utf16_string jarName)
+javacall_result nams_db_install_app(char* textLine)
 {
     javacall_handle dbHandle;
     char newLine[2];
@@ -485,7 +459,7 @@ javacall_result nams_db_install_app(char* textLine, javacall_utf16_string jarNam
     char strSuiteID[10];
     char dbHome[JAVACALL_MAX_FILE_NAME_LENGTH];
 
-    if (nams_db_open(JAVACALL_FILE_O_APPEND | JAVACALL_FILE_O_RDWR, 
+    if (nams_db_open(JAVACALL_FILE_O_APPEND | JAVACALL_FILE_O_RDWR,
                      &dbHandle) != JAVACALL_OK)
     {
         return JAVACALL_FAIL;
@@ -510,10 +484,8 @@ javacall_result nams_db_install_app(char* textLine, javacall_utf16_string jarNam
 
     if (CreateDirectory(dbHome, NULL) == 0)
     {
-        javacall_print("[NAMS] Make DB home error!\n");
+        javautil_debug_print (JAVACALL_LOG_ERROR, "nams_db", "[NAMS] Make DB home error!\n");
     }
-
-    javanotify_ams_create_resource_cache(suiteID);
 
     installed_suite_count++;
 
@@ -558,7 +530,7 @@ javacall_result nams_db_remove_app(int itemIndex)
 
     if (nams_db_remove_suite_home(removeID) != JAVACALL_OK)
     {
-        javacall_print("[NAMS] Remove DB home error!\n");
+        javautil_debug_print (JAVACALL_LOG_ERROR, "nams_db", "[NAMS] Remove DB home error!\n");
     }
 
     InstalledSuite[removeID] = 0;

@@ -292,16 +292,15 @@ javacall_dom_mouseevent_init_mouse_event_ns(javacall_handle handle,
                                             javacall_const_utf16_string modifiers_list);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this mouseevent
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this mouseevent.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_mouseevent_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_mouseevent_finalize(javacall_handle handle);
 
 
 /** @} */

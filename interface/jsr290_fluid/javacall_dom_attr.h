@@ -199,16 +199,15 @@ javacall_dom_attr_is_id(javacall_handle handle,
                         /* OUT */ javacall_bool* ret_value);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this attr
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this attr.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_attr_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_attr_finalize(javacall_handle handle);
 
 
 /** @} */

@@ -1,22 +1,22 @@
 /*
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
  * 2 only, as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included at /legal/license.txt).
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- * 
+ *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
@@ -24,18 +24,18 @@
 
 #include <Windows.h>
 #include <string.h>
-#include "nams.h" 
+#include "nams.h"
 #include "javacall_nams.h"
 #include "javacall_memory.h"
 #include "javacall_logging.h"
- 
+
 MidletNode* MidletList[MAX_MIDLET_NUM];
 int current_midlet_count;
 
-/* Pending midlet info for recording by javacall_ams_midlet_state_changed() */
+// Pending midlet info for recording by javacall_ams_midlet_stateChanged()
 static MidletNode pendingMidletInfo;
 static javacall_bool pending;
- 
+
 void nams_init_midlet_list()
 {
     int i;
@@ -59,8 +59,9 @@ void nams_clean_midlet_list()
 void nams_set_midlet_static_info(int appID, MidletNode* pInfo)
 {
     int i;
+    int len;
     char key[]="MIDlet-Jar-RSA-SHA1";
-    javacall_utf16* uKey;
+    javacall_utf16 uKey[MAX_PROPERTY_NAME_LEN];
     javacall_utf16 uValue[MAX_VALUE_NAME_LEN]; // not used
 
     pending = TRUE;
@@ -70,14 +71,20 @@ void nams_set_midlet_static_info(int appID, MidletNode* pInfo)
     pendingMidletInfo.requestForeground = FALSE;
     for (i = 0; i < JAVACALL_AMS_PERMISSION_LAST; i++)
     {
-        pendingMidletInfo.permissions.permission[i] 
+        pendingMidletInfo.permissions.permission[i]
                           = JAVACALL_AMS_PERMISSION_VAL_BLANKET;
     }
 
-    nams_string_to_utf16(key, strlen(key), &uKey, strlen(key));
+    len = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, key, strlen(key),
+                              uKey, MAX_PROPERTY_NAME_LEN*2);
+    if (len==0)
+    {
+	 javautil_debug_print (JAVACALL_LOG_ERROR, "midlet_list", "[NAMS] nams_set_midlet_static_info MultiByteToWideChar error\n");
+    }
+    uKey[len] = 0;
 
-    if (javacall_ams_get_suite_property(appID, uKey, uValue,
-            MAX_VALUE_NAME_LEN) == JAVACALL_OK)
+    if (javacall_ams_get_suite_property(appID, uKey, uValue, MAX_VALUE_NAME_LEN)
+        == JAVACALL_OK)
     {
         pendingMidletInfo.domain = JAVACALL_AMS_DOMAIN_TRUSTED;
     }
@@ -85,9 +92,6 @@ void nams_set_midlet_static_info(int appID, MidletNode* pInfo)
     {
         pendingMidletInfo.domain = JAVACALL_AMS_DOMAIN_UNTRUSTED;
     }
-
-    javacall_free(uKey);
-
 }
 
 javacall_result nams_allocate_appid(javacall_suite_id* pAppID)
@@ -122,7 +126,7 @@ javacall_result nams_add_midlet(javacall_suite_id appID)
     memcpy(MidletList[appID], &pendingMidletInfo, sizeof(MidletNode));
     current_midlet_count ++;
     pending = FALSE;
-    
+
     return JAVACALL_OK;
 }
 
@@ -166,10 +170,6 @@ javacall_result nams_find_midlet_by_state(javacall_midlet_state state, int* inde
 javacall_result nams_get_midlet_state(int index, javacall_midlet_state *state)
 {
     if (index >= MAX_MIDLET_NUM || index < 1)
-    {
-        return JAVACALL_FAIL;
-    }
-    if (MidletList[index] == NULL)
     {
         return JAVACALL_FAIL;
     }
@@ -278,7 +278,7 @@ javacall_result nams_get_midlet_domain(int index, javacall_ams_domain* domain)
     return JAVACALL_OK;
 }
 
-javacall_result nams_get_midlet_classname(int index, contentList* className)
+javacall_result nams_get_midlet_classname(int index, char* className)
 {
     if (index >= MAX_MIDLET_NUM || index < 1)
     {
@@ -288,7 +288,7 @@ javacall_result nams_get_midlet_classname(int index, contentList* className)
     {
         return JAVACALL_FAIL;
     }
-    nams_content_list_add(className, MidletList[index]->className);
+    strcpy(className, MidletList[index]->className);
 
     return JAVACALL_OK;
 }
@@ -332,16 +332,6 @@ void nams_set_midlet_request_foreground(int index)
         return;
     }
     MidletList[index]->requestForeground = TRUE;
-
-}
-
-void nams_clear_midlet_request_foreground(int index)
-{
-    if (index >= MAX_MIDLET_NUM || index < 1 || MidletList[index] == NULL)
-    {
-        return;
-    }
-    MidletList[index]->requestForeground = FALSE;
 
 }
 

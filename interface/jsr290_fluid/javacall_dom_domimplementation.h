@@ -187,16 +187,15 @@ javacall_dom_domimplementation_get_feature(javacall_handle handle,
                                            /* OUT */ javacall_handle* ret_value);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this domimplementation
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this domimplementation.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_domimplementation_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_domimplementation_finalize(javacall_handle handle);
 
 
 /** @} */

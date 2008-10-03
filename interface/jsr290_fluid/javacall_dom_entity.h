@@ -112,16 +112,15 @@ javacall_dom_entity_get_notation_name(javacall_handle handle,
                                       /* INOUT */ javacall_uint32* ret_value_len);
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this entity
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this entity.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_entity_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_entity_finalize(javacall_handle handle);
 
 
 /** @} */

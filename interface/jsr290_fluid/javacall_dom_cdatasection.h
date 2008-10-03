@@ -46,16 +46,15 @@ extern "C" {
  */
 
 /** 
- * Decrements ref counter of the native object specified number of times
+ * Deletes object representing this cdatasection
  * 
- * @param handle Pointer to the object representing this node.
- * @param count number of times to decrement.
+ * @param handle Pointer to the object representing this cdatasection.
  * 
  * @return JAVACALL_OK if all done successfuly,
  *         JAVACALL_NOT_IMPLEMENTED when the stub was called
  */
 javacall_result
-javacall_dom_cdatasection_clear_references(javacall_handle handle, javacall_int32 count);
+javacall_dom_cdatasection_finalize(javacall_handle handle);
 
 
 /** @} */
