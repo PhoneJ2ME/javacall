@@ -228,13 +228,7 @@ static javacall_result recorder_set_recordsize_limit(javacall_handle handle,
     if( INT_MAX != *size && *size > 20000000 )
         *size = 20000000;
 
-    if ( *size < sizeof(struct std_head))
-        *size = sizeof(struct std_head);
-
-    h->lengthLimit = (*size);
-
-    if ( INT_MAX != *size )
-        h->lengthLimit -= sizeof(struct std_head);
+    h->lengthLimit = *size;
 
     r = JAVACALL_OK;
 
@@ -366,7 +360,9 @@ static javacall_result recorder_get_recorded_data_size(javacall_handle handle,
     javacall_result r = JAVACALL_FAIL;
     recorder* h = (recorder*)handle;
     
-    *size = h->recordLen + sizeof(struct std_head);
+    *size = -1;
+
+    *size = h->recordLen;
     r = JAVACALL_OK;
 
     return r;

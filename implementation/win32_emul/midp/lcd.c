@@ -48,25 +48,12 @@ static struct {
 
 static javacall_bool inFullScreenMode;
 static javacall_bool isLCDActive = JAVACALL_FALSE;
-/* If lcd display is rotated */
-static javacall_bool isLCDRotated = JAVACALL_FALSE;
-/* If emulator skin is rotated */
-static javacall_bool isPhoneRotated = JAVACALL_FALSE;
+/* if display orientation is reversed */
+static javacall_bool reverse_orientation;
 /* if display content should be turned upside down */
 static javacall_bool top_down;
-/* If clamshell is opened */
-static javacall_bool clamshell_opened;
 
 static void rotate_offscreen_buffer(javacall_pixel* dst, javacall_pixel *src, int src_width, int src_height);
-
-const static int MAIN_DISPLAY_ID = 0;
-const static int EXTE_DISPLAY_ID = 1;
-static int currDisplayId;
-static struct {
-    int width;
-    int height;
-    int full_height; /* screen height in full screen mode */
-} MAIN_DISPLAY_SIZE, EXTE_DISPLAY_SIZE;
 
 /**
  * Initialize LCD API
@@ -78,7 +65,6 @@ javacall_result javacall_lcd_init(void) {
 	static LimeFunction *f = NULL;
 
 	int *res, resLen;
-    int bufferSize;
 
 	if (isLCDActive) {
 		javautil_debug_print(JAVACALL_LOG_WARNING, "lcd", "javacall_lcd_init called more than once. Ignored\n");
@@ -88,61 +74,21 @@ javacall_result javacall_lcd_init(void) {
     isLCDActive = JAVACALL_TRUE;
     inFullScreenMode = JAVACALL_FALSE;
     top_down = JAVACALL_FALSE;
-    clamshell_opened = JAVACALL_TRUE;
-
-#ifdef ENABLE_WTK
-
-    f = NewLimeFunction(LIME_PACKAGE,
-                        LIME_GRAPHICS_CLASS,
-                       "getDisplayParams");
-    f->call(f, &res, &resLen);
-
-    VRAM.width = res[0];
-    VRAM.height = res[1];
-    VRAM.full_height = res[2];
-
-    bufferSize = VRAM.width * VRAM.full_height * sizeof(javacall_pixel);
-
-#else
 
 	f = NewLimeFunction(LIME_PACKAGE,
 						LIME_GRAPHICS_CLASS,
-						"getScreenParams");
+						"getDisplayParams");
   
-	f->call(f, &res, &resLen, MAIN_DISPLAY_ID);
+	f->call(f, &res, &resLen);
 
-    MAIN_DISPLAY_SIZE.width = res[0];
-	MAIN_DISPLAY_SIZE.height = res[1];
-	MAIN_DISPLAY_SIZE.full_height = res[2];
+	VRAM.width = res[0];
+	VRAM.height = res[1];
+	VRAM.full_height = res[2];
 
-	f->call(f, &res, &resLen, EXTE_DISPLAY_ID);
-
-    EXTE_DISPLAY_SIZE.width = res[0];
-	EXTE_DISPLAY_SIZE.height = res[1];
-	EXTE_DISPLAY_SIZE.full_height = res[2];
-
-    currDisplayId = MAIN_DISPLAY_ID;
-
-    VRAM.width = MAIN_DISPLAY_SIZE.width;
-    VRAM.height = MAIN_DISPLAY_SIZE.height;
-    VRAM.full_height = MAIN_DISPLAY_SIZE.full_height;
-    {
-        int mainBufferSize = MAIN_DISPLAY_SIZE.width * MAIN_DISPLAY_SIZE.full_height;
-        int exteBufferSize = EXTE_DISPLAY_SIZE.width * EXTE_DISPLAY_SIZE.full_height;
-        /* External and main display are not available simultaneously,
-         * so we will use one screen buffer.  
-         */
-        bufferSize = (mainBufferSize > exteBufferSize ? 
-                         mainBufferSize : exteBufferSize) * sizeof(javacall_pixel);
-    }
-#endif
-
-    VRAM.hdc = (javacall_pixel*)malloc(bufferSize);
-    memset(VRAM.hdc, 0x11, bufferSize);
-    /* assuming for win32_emul configuration we have no need to minimize memory consumption */
-    VRAM.hdc_rotated = (javacall_pixel*)malloc(bufferSize);
-    memset(VRAM.hdc_rotated, 0x11, bufferSize);
-
+	VRAM.hdc = (javacall_pixel*)malloc(VRAM.width * VRAM.full_height * sizeof(javacall_pixel));
+        memset(VRAM.hdc,0x11,VRAM.width * VRAM.full_height * sizeof(javacall_pixel));
+        /* assuming for win32_emul configuration we have no need to minimize memory consumption */
+	VRAM.hdc_rotated = (javacall_pixel*)malloc(VRAM.width * VRAM.full_height * sizeof(javacall_pixel));
     return JAVACALL_OK;
 }
 
@@ -193,7 +139,7 @@ javacall_pixel* javacall_lcd_get_screen(int hardwareId,
 
     /* as status bar does not rotate client area rotates without distortion */
   (void)hardwareId;
-    if (isPhoneRotated) {
+    if (reverse_orientation) {
         int* temp = screenWidth;
         screenWidth = screenHeight;
         screenHeight = temp;
@@ -240,7 +186,7 @@ javacall_result javacall_lcd_flush(int hardwareId) {
         clip[3] = VRAM.full_height;
     }
 
-    if (isLCDRotated || top_down) {
+    if (reverse_orientation || top_down) {
         current_hdc = VRAM.hdc_rotated;
         rotate_offscreen_buffer(current_hdc,
                                 VRAM.hdc,
@@ -250,51 +196,29 @@ javacall_result javacall_lcd_flush(int hardwareId) {
         current_hdc = VRAM.hdc;
     }
 
-#ifdef ENABLE_WTK
-
-   f = NewLimeFunction(LIME_PACKAGE,
-                       LIME_GRAPHICS_CLASS,
-                       "drawRGB16");
-   if(inFullScreenMode) {
-       f->call(f, NULL, 0, 0, clip, 4, 0, current_hdc, (VRAM.width * VRAM.full_height) << 1, 0, 0, VRAM.width, VRAM.full_height);
-   } else {
-       f->call(f, NULL, 0, 0, clip, 4, 0, current_hdc, (VRAM.width * VRAM.height) << 1, 0, 0, VRAM.width, VRAM.height);
-   }
-
-   f1 = NewLimeFunction(LIME_PACKAGE,
-                        LIME_GRAPHICS_CLASS,
-                       "refresh");
-   if(inFullScreenMode) {
-       f1->call(f1, NULL, 0, 0, VRAM.width, VRAM.full_height);
-   } else {
-       f1->call(f1, NULL, 0, 0, VRAM.width, VRAM.height);
-   }
-
-#else
-
-    f = NewLimeFunction(LIME_PACKAGE,
-                        LIME_GRAPHICS_CLASS,
-                       "drawRGB16Buffer");
+    if (f == NULL) {
+        f = NewLimeFunction(LIME_PACKAGE,
+                            LIME_GRAPHICS_CLASS,
+                            "drawRGB16");
+    }
+  
     if(inFullScreenMode) {
-        f->call(f, NULL, currDisplayId, 0, 0, clip, 4, 0, current_hdc, 
-                    (VRAM.width * VRAM.full_height) << 1, 0, 0, 
-                     VRAM.width, VRAM.full_height);
+        f->call(f, NULL, 0, 0, clip, 4, 0, current_hdc, (VRAM.width * VRAM.full_height) << 1, 0, 0, VRAM.width, VRAM.full_height);
     } else {
-        f->call(f, NULL, currDisplayId, 0, 0, clip, 4, 0, current_hdc, 
-                    (VRAM.width * VRAM.height) << 1, 0, 0, 
-                     VRAM.width, VRAM.height);
+        f->call(f, NULL, 0, 0, clip, 4, 0, current_hdc, (VRAM.width * VRAM.height) << 1, 0, 0, VRAM.width, VRAM.height);
     }
 
-    f1 = NewLimeFunction(LIME_PACKAGE,
-                         LIME_GRAPHICS_CLASS,
-                        "refreshDisplay");
-    if(inFullScreenMode) {
-        f1->call(f1, NULL, currDisplayId, 0, 0, VRAM.width, VRAM.full_height);
-    } else {
-        f1->call(f1, NULL, currDisplayId, 0, 0, VRAM.width, VRAM.height);
+    if (f1==NULL)
+    {
+        f1 = NewLimeFunction(LIME_PACKAGE,
+                             LIME_GRAPHICS_CLASS,
+                             "refresh");
     }
-
-#endif
+    if(inFullScreenMode) {
+        f1->call(f1, NULL, 0, 0, VRAM.width, VRAM.full_height);
+    } else {
+        f1->call(f1, NULL, 0, 0, VRAM.width, VRAM.height);
+    }
 
     return JAVACALL_OK;
 }
@@ -302,7 +226,7 @@ javacall_result javacall_lcd_flush(int hardwareId) {
 
 static void rotate_offscreen_buffer(javacall_pixel* dst, javacall_pixel *src, int src_width, int src_height) {
     int buffer_length = src_width*src_height;
-    if (isLCDRotated) {
+    if (reverse_orientation) {
         if (!top_down) {
             javacall_pixel *src_end = src + buffer_length;
             javacall_pixel *dst_end = dst + buffer_length;
@@ -483,11 +407,11 @@ javacall_lcd_set_screen_mode(
 void on_screen_rotated() {
       static LimeFunction *f = NULL;
       f = NewLimeFunction(LIME_PACKAGE, LIME_GRAPHICS_CLASS, "screenRotated");
-      f->call(f, NULL, currDisplayId, isPhoneRotated, top_down);
+      /* IMPL NOTE: call on the proper screen ID with multiple screen support */
+      f->call(f, NULL, 0 /*screen id*/, reverse_orientation, top_down);
 }
 
-/**
- * Rotates display according to code.
+/* Rotates display according to code.
  * If code is 0 no screen transformations made;
  * If code is 1 then screen orientation is reversed.
  * if code is 2 then screen is turned upside-down.
@@ -495,90 +419,33 @@ void on_screen_rotated() {
  * and screen is turned upside-down.
  */
 void RotateDisplay(short code) {
+    javacall_bool prev_top_down;
+    prev_top_down = top_down;
     top_down = code & 0x02;
-    if ((code & 0x01) != isPhoneRotated) {
-        isPhoneRotated = !isPhoneRotated;
+    if ((code & 0x01) != reverse_orientation) {
         javanotify_rotation(javacall_lcd_get_current_hardwareId());
+    } else if (prev_top_down != top_down) {
+        //we should initiate screen refresh
+        on_screen_rotated();
+        javacall_lcd_flush(javacall_lcd_get_current_hardwareId());                
     }
-    javacall_lcd_flush(javacall_lcd_get_current_hardwareId());
-    on_screen_rotated();
 }
-/**
- * Called by the system when lcdui display changed its orientation.
- */
+
 javacall_bool javacall_lcd_reverse_orientation(int hardwareId) {
       (void)hardwareId;
-      isLCDRotated = !isLCDRotated;
-      return isLCDRotated;
+      reverse_orientation = !reverse_orientation;
+      on_screen_rotated();
+      return reverse_orientation;
 }
-
-/**
- * Called when clamshell state changed
- * to switch from internal display to external
- * or vice versa.
- */
-void ClamshellStateChanged(short state) {
-#ifndef ENABLE_WTK
-    if (state == 2) {
-       /* IMPL_NOTE: two displays are active - subject to implement.
-        * For now we move to main display. 
-        */
-        if (clamshell_opened == JAVACALL_FALSE) {
-            javanotify_clamshell_state_changed(JAVACALL_LCD_CLAMSHELL_OPEN);
-            clamshell_opened = JAVACALL_TRUE;
-        } 
-    } else if (state == 0) {
-        if (clamshell_opened == JAVACALL_FALSE) {
-           javanotify_clamshell_state_changed(JAVACALL_LCD_CLAMSHELL_OPEN);
-           clamshell_opened = JAVACALL_TRUE;
-        }
-    } else {
-        if (clamshell_opened == JAVACALL_TRUE) {
-           javanotify_clamshell_state_changed(JAVACALL_LCD_CLAMSHELL_CLOSE);
-           clamshell_opened = JAVACALL_FALSE;
-        }
-    }
-#endif
-}
-
-
-/**
- * Handle clamshell event
- */
-void javacall_lcd_handle_clamshell() {
-
-#ifndef ENABLE_WTK
-    if (clamshell_opened == JAVACALL_TRUE
-            && currDisplayId == EXTE_DISPLAY_ID) {
-        VRAM.width = MAIN_DISPLAY_SIZE.width;
-        VRAM.height = MAIN_DISPLAY_SIZE.height;
-        VRAM.full_height = MAIN_DISPLAY_SIZE.full_height;
-        currDisplayId = MAIN_DISPLAY_ID;
-        javacall_lcd_flush(currDisplayId);                
-    } else if (clamshell_opened == JAVACALL_FALSE 
-                   && currDisplayId == MAIN_DISPLAY_ID) {
-        VRAM.width = EXTE_DISPLAY_SIZE.width;
-        VRAM.height = EXTE_DISPLAY_SIZE.height;
-        VRAM.full_height = EXTE_DISPLAY_SIZE.full_height;
-        currDisplayId = EXTE_DISPLAY_ID;
-        javacall_lcd_flush(currDisplayId);                
-    }
-#endif
-}
-
-/**
- * Reverse flag of rotation
- * @param hardwareId unique id of hardware display
- */
  
 javacall_bool javacall_lcd_get_reverse_orientation(int hardwareId) {
-    (void)hardwareId;
-     return isPhoneRotated;
+  (void)hardwareId;
+     return reverse_orientation;
 }
   
 int javacall_lcd_get_screen_height(int hardwareId) {
   (void)hardwareId;
-    if (isPhoneRotated) {
+    if (reverse_orientation) {
         return VRAM.width;
     } else {
         if(inFullScreenMode) {
@@ -591,7 +458,7 @@ int javacall_lcd_get_screen_height(int hardwareId) {
   
 int javacall_lcd_get_screen_width(int hardwareId) {
   (void)hardwareId;
-    if (isPhoneRotated) {
+    if (reverse_orientation) {
         if(inFullScreenMode) {
             return VRAM.full_height;
         } else {
@@ -632,7 +499,7 @@ void getScreenCoordinates(short screenX, short screenY, short* x, short* y) {
         }
     }
 
-    if (isPhoneRotated) {
+    if (reverse_orientation) {
         short prevX = *x;
         *x = *y;
         *y = VRAM.width - prevX;
