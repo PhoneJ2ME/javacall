@@ -73,8 +73,6 @@ extern "C" {
  *   the Document Type Declaration associated with this document, or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_doctype_finish function to complete the 
  *             operation,
@@ -133,8 +131,6 @@ javacall_dom_document_get_doctype_finish(void *context,
  *   the <code>DOMImplementation</code> object that handles this document
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_implementation_finish function to complete the 
  *             operation,
@@ -178,8 +174,6 @@ javacall_dom_document_get_implementation_finish(void *context,
  *   the child node that is the root element of the document
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_document_element_finish function to complete the 
  *             operation,
@@ -237,8 +231,6 @@ javacall_dom_document_get_document_element_finish(void *context,
  *   <code>namespaceURI</code> set to <code>NULL</code>.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if INVALID_CHARACTER_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_element_finish function to complete the 
@@ -297,8 +289,6 @@ javacall_dom_document_create_element_finish(void *context,
  *   a new <code>DocumentFragment</code>.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_document_fragment_finish function to complete the 
  *             operation,
@@ -341,8 +331,6 @@ javacall_dom_document_create_document_fragment_finish(void *context,
  *   the new <code>Text</code> object.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_text_node_finish function to complete the 
  *             operation,
@@ -386,8 +374,6 @@ javacall_dom_document_create_text_node_finish(void *context,
  *   the new <code>Comment</code> object.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_comment_finish function to complete the 
  *             operation,
@@ -432,8 +418,6 @@ javacall_dom_document_create_comment_finish(void *context,
  *   the new <code>CDATASection</code> object.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if NOT_SUPPORTED_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_cdata_section_finish function to complete the 
@@ -489,8 +473,6 @@ javacall_dom_document_create_cdata_section_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -553,8 +535,6 @@ javacall_dom_document_create_processing_instruction_finish(void *context,
  *   <code>NULL</code>. The value of the attribute is the empty string.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if INVALID_CHARACTER_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_attribute_finish function to complete the 
@@ -623,8 +603,6 @@ javacall_dom_document_create_attribute_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -696,8 +674,6 @@ javacall_dom_document_create_entity_reference_finish(void *context,
  *   <code>Elements</code>.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_elements_by_tag_name_finish function to complete the 
  *             operation,
@@ -844,8 +820,6 @@ javacall_dom_document_get_elements_by_tag_name_finish(void *context,
  *                            JAVACALL_DOM_INVALID_CHARACTER_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1034,8 +1008,6 @@ javacall_dom_document_import_node_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1176,8 +1148,6 @@ javacall_dom_document_create_element_ns_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1280,8 +1250,6 @@ javacall_dom_document_create_attribute_ns_finish(void *context,
  *   <code>Elements</code>.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_elements_by_tag_name_ns_finish function to complete the 
  *             operation,
@@ -1338,8 +1306,6 @@ javacall_dom_document_get_elements_by_tag_name_ns_finish(void *context,
  *   the matching element or <code>NULL</code> if there is none.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_element_by_id_finish function to complete the 
  *             operation,
@@ -1452,8 +1418,6 @@ javacall_dom_document_get_element_by_id_finish(void *context,
  *                            JAVACALL_DOM_NO_MODIFICATION_ALLOWED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1585,8 +1549,6 @@ javacall_dom_document_adopt_node_finish(void *context,
  *    The newly created event object. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if NOT_SUPPORTED_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_create_event_finish function to complete the 
@@ -1658,8 +1620,6 @@ javacall_dom_document_create_event_finish(void *context,
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_can_dispatch_finish function to complete the 
  *             operation,
@@ -1703,8 +1663,6 @@ javacall_dom_document_can_dispatch_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_document_get_default_view_finish function to complete the 
  *             operation,
