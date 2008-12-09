@@ -28,15 +28,10 @@
 #include "javacall_properties.h"
 #include "javacall_events.h"
 #include "javacall_logging.h"
-#include "javacall_memory.h"
 
 #ifdef ENABLE_OUTPUT_REDIRECTION
 #include "io_sockets.h"
 #endif /* ENABLE_OUTPUT_REDIRECTION */
-
-#ifdef ENABLE_MONITOR_PARENT_PROCESS
-#include "parproc_monitor.h"
-#endif /* ENABLE_MONITOR_PARENT_PROCESS */
 
 #if ENABLE_JSR_120
 extern javacall_result finalize_wma_emulator();
@@ -169,10 +164,6 @@ main(int argc, char *argv[]) {
     int propFileNameLen = 0;
     int isMemoryProfiler = 0;
 
-#ifdef USE_MEMMON
-	int isMemoryMonitor = 0;
-#endif
-
     /* uncomment this like to force the debugger to start */
     /* _asm int 3; */
 
@@ -255,7 +246,7 @@ main(int argc, char *argv[]) {
             if (strcmp(key,"com.sun.midp.io.j2me.apdu.hostsandports") == 0 ) {
                 key = "com.sun.io.j2me.apdu.hostsandports";
                 property_type = JAVACALL_INTERNAL_PROPERTY;
-            } else if (!isMemoryProfiler && strcmp(key,"memprofport") == 0) {
+            } else if (!isMemoryProfiler && strcmp(key,"memmonport") == 0) {
                 int j = strlen(value);
                 if (j > 0 && j < 6) { /* port length is correct */
 				    j++;
@@ -269,19 +260,14 @@ main(int argc, char *argv[]) {
                                       JAVACALL_INTERNAL_PROPERTY);
                     isMemoryProfiler = 1;
                 }
-#ifdef USE_MEMMON
-            } else if (strcmp(key,"monitormemory") == 0) {
-                javacall_set_property("MemoryMonitor",
-                                  "true", JAVACALL_TRUE,
-                                  JAVACALL_INTERNAL_PROPERTY);
-	            isMemoryMonitor=1;
-#endif
-			}
+            }
             javacall_set_property(key, value, JAVACALL_TRUE,property_type);
         } else if (strcmp(argv[i], "-profile") == 0) {
                 /* ROM profile name is passed here */ 
                 vmArgv[vmArgc++] = argv[i++];
                 vmArgv[vmArgc++] = argv[i];
+				} else if (strcmp(argv[i], "-monitormemory") == 0) {
+            /* old argument  - ignore it */
         } else if (strcmp(argv[i], "-memory_profiler") == 0) {
 
             /* It is a CLDC arg, add to CLDC arguments list */
@@ -487,14 +473,6 @@ main(int argc, char *argv[]) {
                             NULL, JAVACALL_TRUE,
                             JAVACALL_INTERNAL_PROPERTY);
     }
-
-#ifdef USE_MEMMON
-    if (!isMemoryMonitor) {
-	    javacall_set_property("MemoryMonitor",
-                            NULL, JAVACALL_TRUE,
-                            JAVACALL_INTERNAL_PROPERTY);
-    }
-#endif
 	
     if (vmArgc > 0 ) {
         /* set VM args */
@@ -518,18 +496,10 @@ main(int argc, char *argv[]) {
                               "com.sun.kvem.io",
                               JAVACALL_TRUE,
                               JAVACALL_APPLICATION_PROPERTY);
-        javacall_set_property("javax.microedition.io.Connector.protocolpath.fallback",
-                              "com.sun.midp.io",
-                              JAVACALL_TRUE,
-                              JAVACALL_APPLICATION_PROPERTY);
     } else {
 #endif
         javacall_set_property("javax.microedition.io.Connector.protocolpath",
                               "com.sun.midp.io",
-                              JAVACALL_TRUE,
-                              JAVACALL_APPLICATION_PROPERTY);
-        javacall_set_property("javax.microedition.io.Connector.protocolpath.fallback",
-                              NULL,
                               JAVACALL_TRUE,
                               JAVACALL_APPLICATION_PROPERTY);
 #ifdef USE_NETMON
@@ -664,15 +634,7 @@ main(int argc, char *argv[]) {
 #endif /* ENABLE_OUTPUT_REDIRECTION */
     }
 
-#ifdef ENABLE_MONITOR_PARENT_PROCESS
-    startParentProcessMonitor();
-#endif /* ENABLE_MONITOR_PARENT_PROCESS */
-
     JavaTask();
-
-#ifdef ENABLE_MONITOR_PARENT_PROCESS
-    stopParentProcessMonitor();
-#endif /* ENABLE_MONITOR_PARENT_PROCESS */
 
 #ifdef ENABLE_OUTPUT_REDIRECTION
     if ((stdoutPort != -1) || (stderrPort != -1)) {

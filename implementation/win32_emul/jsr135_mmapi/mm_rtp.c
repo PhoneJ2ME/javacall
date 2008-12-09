@@ -61,10 +61,7 @@ typedef struct
 
     int                   missing;
 
-    javacall_int64        samplesPlayed;
-
-    long                  volume;
-    javacall_bool         mute;
+    long                  mediaTime;
 } rtp_player;
 
 size_t rtp_pcm_callback( void* buf, size_t size, void* param )
@@ -92,30 +89,17 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
 
         if( p->playing )
         {
-            if( 16 == p->bits )
-            {
-                p->samplesPlayed += size / p->channels / 2;
-            }
-            else // if( 8 == p=>bits )
-            {
-                p->samplesPlayed += size / p->channels;
-            }
-
-            mt = p->samplesPlayed * 1000 / p->rate;
+            float ms = (float)size / (float)p->rate / (float)p->channels;
+            if( 16 == p->bits ) ms /= 2.0f;
+            p->mediaTime += (int)ms;
+            mt = p->mediaTime;
         }
     }
     LeaveCriticalSection( &(p->cs) );
 
     if( NULL != xbuf )
     {
-        if( JAVACALL_TRUE == p->mute || 0 == p->volume )
-        {
-            memset( buf, 0, size );
-        }
-        else
-        {
-            memcpy( buf, xbuf->data, size );
-        }
+        memcpy( buf, xbuf->data, size );
         FREE( xbuf );
 
         p->missing = 0;
@@ -131,7 +115,7 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
                 p->buffering = TRUE;
                 OutputDebugString( "  -------- buffering started --------\n" );
                 javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_BUFFERING_STARTED,
-                    p->appId, p->playerId, JAVACALL_OK, (void*)mt );
+                    p->appId, p->playerId, JAVACALL_OK, mt );
             }
 
             // TODO: this is a stub. need some other method to determine EOM
@@ -139,7 +123,7 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
             {
                 OutputDebugString( "  -------- end of media      --------\n" );
                 javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_END_OF_MEDIA,
-                    p->appId, p->playerId, JAVACALL_OK, (void*)mt );
+                    p->appId, p->playerId, JAVACALL_OK, mt );
             }
         }
     }
@@ -170,9 +154,7 @@ static javacall_handle rtp_create(int appId,
     p->playing     = FALSE;
     p->buffering   = TRUE;
     p->missing     = 0;
-    p->samplesPlayed = 0;
-    p->volume      = 100;
-    p->mute        = JAVACALL_FALSE;
+    p->mediaTime   = 0;
 
     InitializeCriticalSection( &(p->cs) );
 
@@ -226,7 +208,6 @@ static javacall_result rtp_get_player_controls(javacall_handle handle,
 {
     rtp_player* p = (rtp_player*)handle;
     OutputDebugString( "*** get controls ***\n" );
-    *controls = JAVACALL_MEDIA_CTRL_VOLUME;
     return JAVACALL_OK;
 }
 
@@ -274,7 +255,7 @@ static javacall_result rtp_realize(javacall_handle handle,
         p->rate = 44100;
         p->channels = 1;
 
-        p->mediaType = JC_FMT_RTP_L16;
+        p->mediaType = JC_FMT_MS_PCM; // TODO: maybe we need separate types for RTP.
 
         get_int_param( mime, L"channels", &(p->channels) );
         get_int_param( mime, L"rate", &(p->rate) );
@@ -379,7 +360,7 @@ static javacall_result rtp_do_buffering(javacall_handle handle,
                 OutputDebugString( "  -------- buffering stopped --------\n" );
                 p->buffering = FALSE;
                 javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED,
-                    p->appId, p->playerId, JAVACALL_OK, (void*)(p->samplesPlayed * 1000 / p->rate) );
+                    p->appId, p->playerId, JAVACALL_OK, p->mediaTime );
             }
             sprintf( str, ">> %li %i %i %i\n", *length, p->queue_size, p->playing, p->buffering );
             OutputDebugString( str );
@@ -450,7 +431,7 @@ static javacall_result rtp_get_time(javacall_handle handle,
     rtp_player* p = (rtp_player*)handle;
 
     EnterCriticalSection( &(p->cs) );
-    *ms = p->samplesPlayed * 1000 / p->rate;
+    *ms = p->mediaTime;
     LeaveCriticalSection( &(p->cs) );
 
     return JAVACALL_OK;
@@ -488,11 +469,11 @@ static javacall_result rtp_switch_to_background(javacall_handle handle,
                          V O L U M E   C O N T R O L
 \*****************************************************************************/
 
+/*
 static javacall_result rtp_get_volume(javacall_handle handle, 
                                       long* level)
 {
     rtp_player* p = (rtp_player*)handle;
-    *level = p->volume;
     return JAVACALL_OK;
 }
 
@@ -500,7 +481,6 @@ static javacall_result rtp_set_volume(javacall_handle handle,
                                       long* level)
 {
     rtp_player* p = (rtp_player*)handle;
-    p->volume = *level;
     return JAVACALL_OK;
 }
 
@@ -508,7 +488,6 @@ static javacall_result rtp_is_mute(javacall_handle handle,
                                    javacall_bool* mute )
 {
     rtp_player* p = (rtp_player*)handle;
-    *mute = p->mute;
     return JAVACALL_OK;
 }
 
@@ -516,9 +495,9 @@ static javacall_result rtp_set_mute(javacall_handle handle,
                                     javacall_bool mute)
 {
     rtp_player* p = (rtp_player*)handle;
-    p->mute = mute;
     return JAVACALL_OK;
 }
+*/
 
 /*****************************************************************************\
                         I N T E R F A C E   T A B L E S
@@ -551,17 +530,19 @@ static media_basic_interface _rtp_basic_itf =
     rtp_switch_to_background
 };
 
+/*
 static media_volume_interface _rtp_volume_itf = {
     rtp_get_volume,
     rtp_set_volume,
     rtp_is_mute,
     rtp_set_mute
 };
+*/
 
 media_interface g_rtp_itf =
 {
     &_rtp_basic_itf,
-    &_rtp_volume_itf,
+    NULL, //&_rtp_volume_itf,
     NULL,
     NULL,
     NULL,
