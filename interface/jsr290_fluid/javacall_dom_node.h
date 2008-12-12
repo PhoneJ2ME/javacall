@@ -62,8 +62,7 @@ extern "C" {
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_node_name_finish function to complete the 
@@ -121,8 +120,7 @@ javacall_dom_node_get_node_name_finish(void *context,
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_FAIL if DOMSTRING_SIZE_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -179,8 +177,6 @@ javacall_dom_node_get_node_value_finish(void *context,
  * @param node_value the value of the node
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if NO_MODIFICATION_ALLOWED_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_set_node_value_finish function to complete the 
@@ -224,8 +220,6 @@ javacall_dom_node_set_node_value_finish(void *context);
  * @param ret_value A code representing the type of the underlying object
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_node_type_finish function to complete the 
  *             operation,
@@ -272,8 +266,6 @@ javacall_dom_node_get_node_type_finish(void *context,
  *   the parent of this node, or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_parent_node_finish function to complete the 
  *             operation,
@@ -322,8 +314,6 @@ javacall_dom_node_get_parent_node_finish(void *context,
  *   a <code>NodeList</code> that contains all children of this node.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_child_nodes_finish function to complete the 
  *             operation,
@@ -368,8 +358,6 @@ javacall_dom_node_get_child_nodes_finish(void *context,
  *   the first child of this node or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_first_child_finish function to complete the 
  *             operation,
@@ -413,8 +401,6 @@ javacall_dom_node_get_first_child_finish(void *context,
  *   the last child of this node or <code>NULL</code>.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_last_child_finish function to complete the 
  *             operation,
@@ -458,8 +444,6 @@ javacall_dom_node_get_last_child_finish(void *context,
  *   the node immediately preceding this node or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_previous_sibling_finish function to complete the 
  *             operation,
@@ -503,8 +487,6 @@ javacall_dom_node_get_previous_sibling_finish(void *context,
  *   the node immediately following this node or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_next_sibling_finish function to complete the 
  *             operation,
@@ -548,8 +530,6 @@ javacall_dom_node_get_next_sibling_finish(void *context,
  *   a <code>NamedNodeMap</code> containing the attributes of this node, or  <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_attributes_finish function to complete the 
  *             operation,
@@ -596,8 +576,6 @@ javacall_dom_node_get_attributes_finish(void *context,
  *   the <code>Document</code> object associated with this node, or <code>NULL</code>
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_owner_document_finish function to complete the 
  *             operation,
@@ -663,8 +641,6 @@ javacall_dom_node_get_owner_document_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -747,8 +723,6 @@ javacall_dom_node_insert_before_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -819,8 +793,6 @@ javacall_dom_node_replace_child_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -887,8 +859,6 @@ javacall_dom_node_remove_child_finish(void *context,
  *                            JAVACALL_DOM_NOT_SUPPORTED_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -947,8 +917,6 @@ javacall_dom_node_append_child_finish(void *context,
  *   <code>false</code> otherwise.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_has_child_nodes_finish function to complete the 
  *             operation,
@@ -1020,8 +988,6 @@ javacall_dom_node_has_child_nodes_finish(void *context,
  *   the duplicate node.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_clone_node_finish function to complete the 
  *             operation,
@@ -1105,8 +1071,6 @@ javacall_dom_node_clone_node_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_normalize_finish function to complete the 
  *             operation,
@@ -1166,8 +1130,6 @@ javacall_dom_node_normalize_finish(void *context);
  *   supported on this node, <code>false</code> otherwise.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_is_supported_finish function to complete the 
  *             operation,
@@ -1231,8 +1193,7 @@ javacall_dom_node_is_supported_finish(void *context,
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_namespace_uri_finish function to complete the 
@@ -1316,8 +1277,7 @@ javacall_dom_node_get_namespace_uri_finish(void *context,
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_prefix_finish function to complete the 
@@ -1412,8 +1372,6 @@ javacall_dom_node_get_prefix_finish(void *context,
  *                            JAVACALL_DOM_NAMESPACE_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1494,8 +1452,7 @@ javacall_dom_node_set_prefix_finish(void *context,
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_local_name_finish function to complete the 
@@ -1550,8 +1507,6 @@ javacall_dom_node_get_local_name_finish(void *context,
  *   <code>false</code> otherwise.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_has_attributes_finish function to complete the 
  *             operation,
@@ -1636,8 +1591,7 @@ javacall_dom_node_has_attributes_finish(void *context,
  * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_FAIL if DOMSTRING_SIZE_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -1767,8 +1721,6 @@ javacall_dom_node_get_text_content_finish(void *context,
  * @param text_content a String containing the new text content for this node
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if NO_MODIFICATION_ALLOWED_ERR occured,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_set_text_content_finish function to complete the 
@@ -1871,8 +1823,6 @@ javacall_dom_node_set_text_content_finish(void *context);
  *   childNodes, etc. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_get_feature_finish function to complete the 
  *             operation,
@@ -1954,8 +1904,6 @@ javacall_dom_node_get_feature_finish(void *context,
  *   <code>EventListener</code> designated to use capture.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_add_event_listener_finish function to complete the 
  *             operation,
@@ -2031,8 +1979,6 @@ javacall_dom_node_add_event_listener_finish(void *context,
  *   vice versa. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_node_remove_event_listener_finish function to complete the 
  *             operation,
@@ -2106,8 +2052,6 @@ javacall_dom_node_remove_event_listener_finish(void *context);
  *                            JAVACALL_DOM_INVALID_CHARACTER_ERR
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_FAIL if error occured; in this case exception_code has to be 
  *             filled,
  *         JAVACALL_WOULD_BLOCK caller must call the 
