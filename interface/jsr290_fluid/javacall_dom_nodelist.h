@@ -63,9 +63,6 @@ extern "C" {
  *   index.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_nodelist_item_finish function to complete the 
  *             operation,
@@ -92,7 +89,6 @@ javacall_dom_nodelist_item_start(javacall_handle handle,
  *   index.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_nodelist_item_finish function to complete the 
  *             operation,
@@ -114,9 +110,6 @@ javacall_dom_nodelist_item_finish(void *context,
  * @param ret_value The number of nodes in the list
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_nodelist_get_length_finish function to complete the 
  *             operation,
@@ -137,7 +130,6 @@ javacall_dom_nodelist_get_length_start(javacall_handle handle,
  * @param ret_value The number of nodes in the list
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_nodelist_get_length_finish function to complete the 
  *             operation,

@@ -59,9 +59,7 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmltextareaelement_get_value_finish function to complete the 
@@ -86,7 +84,6 @@ javacall_dom_htmltextareaelement_get_value_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -109,9 +106,6 @@ javacall_dom_htmltextareaelement_get_value_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmltextareaelement_select_finish function to complete the 
  *             operation,
@@ -129,7 +123,6 @@ javacall_dom_htmltextareaelement_select_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmltextareaelement_select_finish function to complete the 
  *             operation,
@@ -152,9 +145,6 @@ javacall_dom_htmltextareaelement_select_finish(void *context);
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmltextareaelement_set_value_finish function to complete the 
  *             operation,
@@ -177,7 +167,6 @@ javacall_dom_htmltextareaelement_set_value_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmltextareaelement_set_value_finish function to complete the 
  *             operation,

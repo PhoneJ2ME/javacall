@@ -60,9 +60,7 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_textevent_get_data_finish function to complete the 
@@ -88,7 +86,6 @@ javacall_dom_textevent_get_data_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -121,9 +118,6 @@ javacall_dom_textevent_get_data_finish(void *context,
  * @param data_arg  Specifies <code>TextEvent.data</code>. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_textevent_init_text_event_finish function to complete the 
  *             operation,
@@ -148,7 +142,6 @@ javacall_dom_textevent_init_text_event_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_textevent_init_text_event_finish function to complete the 
  *             operation,
@@ -180,9 +173,6 @@ javacall_dom_textevent_init_text_event_finish(void *context);
  *   method for a description of this parameter. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_textevent_init_text_event_ns_finish function to complete the 
  *             operation,
@@ -209,7 +199,6 @@ javacall_dom_textevent_init_text_event_ns_start(javacall_handle handle,
  *   method for a description of this parameter. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_textevent_init_text_event_ns_finish function to complete the 
  *             operation,
