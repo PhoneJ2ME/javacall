@@ -56,9 +56,6 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_get_detail_finish function to complete the 
  *             operation,
@@ -78,7 +75,6 @@ javacall_dom_uievent_get_detail_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_get_detail_finish function to complete the 
  *             operation,
@@ -107,9 +103,6 @@ javacall_dom_uievent_get_detail_finish(void *context,
  * @param detail_arg  Specifies <code>UIEvent.detail</code>.   
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_init_ui_event_finish function to complete the 
  *             operation,
@@ -133,7 +126,6 @@ javacall_dom_uievent_init_ui_event_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_init_ui_event_finish function to complete the 
  *             operation,
@@ -165,9 +157,6 @@ javacall_dom_uievent_init_ui_event_finish(void *context);
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_init_ui_event_ns_finish function to complete the 
  *             operation,
@@ -194,7 +183,6 @@ javacall_dom_uievent_init_ui_event_ns_start(javacall_handle handle,
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_uievent_init_ui_event_ns_finish function to complete the 
  *             operation,
