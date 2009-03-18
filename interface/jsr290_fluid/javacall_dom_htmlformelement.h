@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -47,45 +47,6 @@ extern "C" {
 
 /**
  * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
- * OR submits the form. It performs the same action as a submit button.
- * 
- * @param handle Pointer to the object representing this htmlformelement.
- * @param invocation_id Invocation identifier which MUST be used in the 
- *                  corresponding javanotify function.
- * @param context The context saved during asynchronous operation.
- * 
- * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
- *         JAVACALL_WOULD_BLOCK caller must call the 
- *             javacall_dom_htmlformelement_submit_finish function to complete the 
- *             operation,
- *         JAVACALL_NOT_IMPLEMENTED when the stub was called
- */
-javacall_result
-javacall_dom_htmlformelement_submit_start(javacall_handle handle,
-                                          javacall_int32 invocation_id,
-                                          void **context);
-
-/**
- * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
- * OR submits the form. It performs the same action as a submit button.
- * 
- * @param context The context saved during asynchronous operation.
- * 
- * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_WOULD_BLOCK caller must call the 
- *             javacall_dom_htmlformelement_submit_finish function to complete the 
- *             operation,
- *         JAVACALL_NOT_IMPLEMENTED when the stub was called
- */
-javacall_result
-javacall_dom_htmlformelement_submit_finish(void *context);
-
-/**
- * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
  * OR sets restores a form element's default values. It performs the same action 
  * as a reset button.
  * 
@@ -95,9 +56,6 @@ javacall_dom_htmlformelement_submit_finish(void *context);
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmlformelement_reset_finish function to complete the 
  *             operation,
@@ -116,7 +74,6 @@ javacall_dom_htmlformelement_reset_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmlformelement_reset_finish function to complete the 
  *             operation,
@@ -124,6 +81,41 @@ javacall_dom_htmlformelement_reset_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_htmlformelement_reset_finish(void *context);
+
+/**
+ * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
+ * OR submits the form. It performs the same action as a submit button.
+ * 
+ * @param handle Pointer to the object representing this htmlformelement.
+ * @param invocation_id Invocation identifier which MUST be used in the 
+ *                  corresponding javanotify function.
+ * @param context The context saved during asynchronous operation.
+ * 
+ * @return JAVACALL_OK if all done successfuly,
+ *         JAVACALL_WOULD_BLOCK caller must call the 
+ *             javacall_dom_htmlformelement_submit_finish function to complete the 
+ *             operation,
+ *         JAVACALL_NOT_IMPLEMENTED when the stub was called
+ */
+javacall_result
+javacall_dom_htmlformelement_submit_start(javacall_handle handle,
+                                          javacall_int32 invocation_id,
+                                          void **context);
+
+/**
+ * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
+ * OR submits the form. It performs the same action as a submit button.
+ * 
+ * @param context The context saved during asynchronous operation.
+ * 
+ * @return JAVACALL_OK if all done successfuly,
+ *         JAVACALL_WOULD_BLOCK caller must call the 
+ *             javacall_dom_htmlformelement_submit_finish function to complete the 
+ *             operation,
+ *         JAVACALL_NOT_IMPLEMENTED when the stub was called
+ */
+javacall_result
+javacall_dom_htmlformelement_submit_finish(void *context);
 
 /** 
  * Decrements ref counter of the native object specified number of times

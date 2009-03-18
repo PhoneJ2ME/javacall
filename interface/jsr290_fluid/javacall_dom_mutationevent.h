@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -62,9 +62,6 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_related_node_finish function to complete the 
  *             operation,
@@ -90,7 +87,6 @@ javacall_dom_mutationevent_get_related_node_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_related_node_finish function to complete the 
  *             operation,
@@ -112,9 +108,7 @@ javacall_dom_mutationevent_get_related_node_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_prev_value_finish function to complete the 
@@ -125,7 +119,7 @@ javacall_result
 javacall_dom_mutationevent_get_prev_value_start(javacall_handle handle,
                                                 javacall_int32 invocation_id,
                                                 void **context,
-                                                /* OUT */ javacall_utf16** ret_value,
+                                                /* OUT */ javacall_utf16_string ret_value,
                                                 /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -137,7 +131,6 @@ javacall_dom_mutationevent_get_prev_value_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -147,7 +140,7 @@ javacall_dom_mutationevent_get_prev_value_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_mutationevent_get_prev_value_finish(void *context,
-                                                 /* OUT */ javacall_utf16** ret_value,
+                                                 /* OUT */ javacall_utf16_string ret_value,
                                                  /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -162,9 +155,7 @@ javacall_dom_mutationevent_get_prev_value_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_new_value_finish function to complete the 
@@ -175,7 +166,7 @@ javacall_result
 javacall_dom_mutationevent_get_new_value_start(javacall_handle handle,
                                                javacall_int32 invocation_id,
                                                void **context,
-                                               /* OUT */ javacall_utf16** ret_value,
+                                               /* OUT */ javacall_utf16_string ret_value,
                                                /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -187,7 +178,6 @@ javacall_dom_mutationevent_get_new_value_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -197,7 +187,7 @@ javacall_dom_mutationevent_get_new_value_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_mutationevent_get_new_value_finish(void *context,
-                                                /* OUT */ javacall_utf16** ret_value,
+                                                /* OUT */ javacall_utf16_string ret_value,
                                                 /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -211,9 +201,7 @@ javacall_dom_mutationevent_get_new_value_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_attr_name_finish function to complete the 
@@ -224,7 +212,7 @@ javacall_result
 javacall_dom_mutationevent_get_attr_name_start(javacall_handle handle,
                                                javacall_int32 invocation_id,
                                                void **context,
-                                               /* OUT */ javacall_utf16** ret_value,
+                                               /* OUT */ javacall_utf16_string ret_value,
                                                /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -235,7 +223,6 @@ javacall_dom_mutationevent_get_attr_name_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -245,7 +232,7 @@ javacall_dom_mutationevent_get_attr_name_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_mutationevent_get_attr_name_finish(void *context,
-                                                /* OUT */ javacall_utf16** ret_value,
+                                                /* OUT */ javacall_utf16_string ret_value,
                                                 /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -260,9 +247,6 @@ javacall_dom_mutationevent_get_attr_name_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_attr_change_finish function to complete the 
  *             operation,
@@ -283,7 +267,6 @@ javacall_dom_mutationevent_get_attr_change_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_get_attr_change_finish function to complete the 
  *             operation,
@@ -321,9 +304,6 @@ javacall_dom_mutationevent_get_attr_change_finish(void *context,
  * @param attr_change_arg  Specifies <code>MutationEvent.attrChange</code>. 
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_init_mutation_event_finish function to complete the 
  *             operation,
@@ -351,7 +331,6 @@ javacall_dom_mutationevent_init_mutation_event_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_init_mutation_event_finish function to complete the 
  *             operation,
@@ -396,9 +375,6 @@ javacall_dom_mutationevent_init_mutation_event_finish(void *context);
  *   description of this parameter.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_init_mutation_event_ns_finish function to complete the 
  *             operation,
@@ -429,7 +405,6 @@ javacall_dom_mutationevent_init_mutation_event_ns_start(javacall_handle handle,
  *   description of this parameter.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mutationevent_init_mutation_event_ns_finish function to complete the 
  *             operation,

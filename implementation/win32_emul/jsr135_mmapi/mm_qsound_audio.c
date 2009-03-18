@@ -452,14 +452,12 @@ static void MQ234_CALLBACK  mq_mutex_unlock( void* m )
 
 /******************************************************************************/
 
-static javacall_result gmInit(int isolateID, int gmIdx)
+static int gmInit(int isolateID, int gmIdx)
 {
     MQ234_CreateOptions opts;
     MQ234_SynthConfig synthConfig;
     MQ234_HostBlock dlsData;
     MQ234_ERROR err;
-    javacall_result res = JAVACALL_FAIL;
-    
     memset(&opts, '\0', sizeof(opts));
 
     opts.mutexCreateParams = NULL;
@@ -595,39 +593,23 @@ static javacall_result gmInit(int isolateID, int gmIdx)
 
     JC_MM_DEBUG_PRINT1( "# pcm_out_open_channel returned 0x%08X\n",
             (int)(g_QSoundGM[gmIdx].pcm_handle) );
-
-    /* This happens if no audio device is found. Should proceed with the
-       proper Java exceptions, not just debug assertion failure */
-    /* JC_MM_ASSERT(NULL != g_QSoundGM[gmIdx].pcm_handle); */
-    
-    if( NULL == g_QSoundGM[gmIdx].pcm_handle )
-    {
-        res = JAVACALL_NO_AUDIO_DEVICE;
-    }
-    else 
-    {
-        res = JAVACALL_OK;
-    }
+    JC_MM_ASSERT(NULL != g_QSoundGM[gmIdx].pcm_handle);
 
     g_QSoundGM[gmIdx].isolateRefs = 1;
 
-    return res;
+    return gmIdx;
 }
 
-javacall_result isolateIDtoGM(int isolateID, /*OUT*/ int *gmIdx )
+int isolateIDtoGM(int isolateID)
 {
     int i = GLOBMAN_INDEX_MAX-1;
-    javacall_result res = JAVACALL_FAIL;
 
     while(i>=0)
     {
         if((g_QSoundGM[i].gm != NULL) && (g_QSoundGM[i].isolateId == isolateID))
         {
             g_QSoundGM[i].isolateRefs++;
-            *gmIdx = i;
-            res = ( NULL == g_QSoundGM[i].pcm_handle ) ?
-                  JAVACALL_NO_AUDIO_DEVICE : JAVACALL_OK;
-            return res;
+            return i;
         }
 
         --i;
@@ -639,17 +621,12 @@ javacall_result isolateIDtoGM(int isolateID, /*OUT*/ int *gmIdx )
     while(i>=0)
     {
         if(g_QSoundGM[i].gm == NULL)
-        {
-            res = gmInit(isolateID, i);
-            *gmIdx = i;
-            return res;
-        }
+            return gmInit(isolateID, i);
 
         --i;
     }
 
-    *gmIdx = i;
-    return res;
+    return i;
 }
 
 static void gmDetach(int gmIdx)
@@ -673,12 +650,7 @@ size_t mmaudio_get_isolate_mix( void *buffer, size_t length, void* param )
 {
     MQ234_ERROR err;
     int isolateid = (int)param;
-    int gmIdx = -1;
-
-    javacall_result res = isolateIDtoGM(isolateid, &gmIdx);
-    
-    JC_MM_ASSERT( JAVACALL_OK == res );
-    
+    int gmIdx     = isolateIDtoGM(isolateid);
     //long i;
     //long sampleBytes = ( length > ENV_BLOCK_BYTES ) ? ENV_BLOCK_BYTES : length;
     //int  sampleCount = (((int)sampleBytes * 8) / ENV_BITS) / ENV_CHANNELS;   // sc * bitsbytes / bits / nchannels
@@ -705,19 +677,12 @@ size_t mmaudio_get_isolate_mix( void *buffer, size_t length, void* param )
 /*---------------------------------------------------------------------------*/
 
 // NEED REVISIT: need handle to structure for the synth on this isolate.
-javacall_result mmaudio_tone_note(long isolateid, long note, long dur, long vol)
+int mmaudio_tone_note(long isolateid, long note, long dur, long vol)
 {
     unsigned char msg[2];
     unsigned char status;
     int tchnl = 5; // NEED REVISIT: Need to see which channel should actually be used for tones.
-    int gmidx = -1;
-    javacall_result res = isolateIDtoGM( isolateid, &gmidx );
-    
-    if( JAVACALL_NO_AUDIO_DEVICE == res )
-    {
-        gmDetach(gmidx);
-        return res;
-    }
+    int gmidx = isolateIDtoGM(isolateid);
 
     if (vol < 0) {
         vol = 0;
@@ -751,29 +716,19 @@ javacall_result mmaudio_tone_note(long isolateid, long note, long dur, long vol)
 
     gmDetach(gmidx);
 
-    return JAVACALL_OK;
+    return 0;
 }
 
 /**
  *
  */
-static javacall_result audio_qs_create(int appId, int playerId,
+static javacall_handle audio_qs_create(int appId, int playerId,
                                        jc_fmt mediaType,
-                                       const javacall_utf16_string URI,
-                                       /* OUT */ javacall_handle *pHandle)
+                                       const javacall_utf16_string URI)
 {
     ah *newHandle = NULL;
     int isolateId = appId;
-    int gmIdx = -1;
-    javacall_result res = isolateIDtoGM( isolateId, &gmIdx );
-    
-    if( JAVACALL_OK != res )
-    {
-        gmDetach( gmIdx );
-        *pHandle = ( javacall_handle )NULL;
-        return res;
-    }
-    
+    int gmIdx = isolateIDtoGM(isolateId);
     JC_MM_DEBUG_PRINT1("audio create %s\n", __FILE__);
     JC_MM_ASSERT(gmIdx>=0);
     switch(mediaType)
@@ -881,8 +836,7 @@ static javacall_result audio_qs_create(int appId, int playerId,
                             mediaType, (int)newHandle, gmIdx);
 
     newHandle->hdr.state = PL135_UNREALIZED;
-    *pHandle = (javacall_handle)newHandle;
-    return res;
+    return (javacall_handle)newHandle;
 }
 
 /**

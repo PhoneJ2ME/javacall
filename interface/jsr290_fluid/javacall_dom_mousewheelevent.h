@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -63,9 +63,6 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mousewheelevent_get_wheel_delta_finish function to complete the 
  *             operation,
@@ -92,7 +89,6 @@ javacall_dom_mousewheelevent_get_wheel_delta_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mousewheelevent_get_wheel_delta_finish function to complete the 
  *             operation,
@@ -126,9 +122,6 @@ javacall_dom_mousewheelevent_get_wheel_delta_finish(void *context,
  *   method for a description of this parameter. 
  * @param cancelable_arg  Refer to the <code>Event.initEventNS()</code> 
  *   method for a description of this parameter. 
- * @param view_arg Pointer to the object of
- *    Refer to the <code>UIEvent.initUIEvent()</code> method 
- *   for a description of this parameter. 
  * @param detail_arg  Refer to the <code>UIEvent.initUIEvent()</code> 
  *   method for a description of this parameter.
  * @param screen_x_arg Refer to the <code>MouseEvent.initMouseEventNS()</code>
@@ -152,9 +145,6 @@ javacall_dom_mousewheelevent_get_wheel_delta_finish(void *context,
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mousewheelevent_init_mouse_wheel_event_ns_finish function to complete the 
  *             operation,
@@ -168,7 +158,6 @@ javacall_dom_mousewheelevent_init_mouse_wheel_event_ns_start(javacall_handle han
                                                              javacall_const_utf16_string type_arg,
                                                              javacall_bool can_bubble_arg,
                                                              javacall_bool cancelable_arg,
-                                                             javacall_handle view_arg,
                                                              javacall_int32 detail_arg,
                                                              javacall_int32 screen_x_arg,
                                                              javacall_int32 screen_y_arg,
@@ -197,7 +186,6 @@ javacall_dom_mousewheelevent_init_mouse_wheel_event_ns_start(javacall_handle han
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mousewheelevent_init_mouse_wheel_event_ns_finish function to complete the 
  *             operation,

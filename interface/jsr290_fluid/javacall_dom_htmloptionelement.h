@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -51,20 +51,13 @@ extern "C" {
  * interactive user agent. Changing this attribute changes the state of 
  * the form control, but does not change the value of the HTML selected 
  * attribute of the element.
- *
  * 
  * @param handle Pointer to the object representing this htmloptionelement.
  * @param invocation_id Invocation identifier which MUST be used in the 
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
- * @param ret_value The current state of the corresponding option element.
- *
- * @see #setSelected
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmloptionelement_get_selected_finish function to complete the 
  *             operation,
@@ -82,15 +75,10 @@ javacall_dom_htmloptionelement_get_selected_start(javacall_handle handle,
  * interactive user agent. Changing this attribute changes the state of 
  * the form control, but does not change the value of the HTML selected 
  * attribute of the element.
- *
  * 
  * @param context The context saved during asynchronous operation.
- * @param ret_value The current state of the corresponding option element.
- *
- * @see #setSelected
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmloptionelement_get_selected_finish function to complete the 
  *             operation,
@@ -106,20 +94,13 @@ javacall_dom_htmloptionelement_get_selected_finish(void *context,
  * interactive user agent. Changing this attribute changes the state of 
  * the form control, but does not change the value of the HTML selected 
  * attribute of the element.
- *
  * 
  * @param handle Pointer to the object representing this htmloptionelement.
  * @param invocation_id Invocation identifier which MUST be used in the 
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
- * @param selected The new state of that option element.
- *
- * @see #getSelected
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmloptionelement_set_selected_finish function to complete the 
  *             operation,
@@ -137,14 +118,10 @@ javacall_dom_htmloptionelement_set_selected_start(javacall_handle handle,
  * interactive user agent. Changing this attribute changes the state of 
  * the form control, but does not change the value of the HTML selected 
  * attribute of the element.
- *
  * 
  * @param context The context saved during asynchronous operation.
- *
- * @see #getSelected
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmloptionelement_set_selected_finish function to complete the 
  *             operation,

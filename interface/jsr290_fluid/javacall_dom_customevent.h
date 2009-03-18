@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -67,9 +67,6 @@ extern "C" {
  *   value may be <code>NULL</code>.   
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_customevent_init_custom_event_ns_finish function to complete the 
  *             operation,
@@ -94,7 +91,6 @@ javacall_dom_customevent_init_custom_event_ns_start(javacall_handle handle,
  *   value may be <code>NULL</code>.   
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_customevent_init_custom_event_ns_finish function to complete the 
  *             operation,

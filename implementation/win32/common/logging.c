@@ -1,6 +1,6 @@
 /*
 *
-* Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+* Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
 * 
 * This program is free software; you can redistribute it and/or
@@ -55,25 +55,6 @@ void javacall_print(const char *s) {
     }
 }
 
-/*
- * Returns the jlong-specifier prefix used with type characters in
- * printf functions or wprintf functions to specify interpretation
- * of jlong, the 64-bit signed integer type, 
- * e.g. for win32 is "%I64d", for linux is "%lld"
- */
-const char * javacall_jlong_format_specifier() {
-  return "%I64d";
-}
-
-/*
- * Returns the julong-specifier prefix used with type characters in
- * printf functions or wprintf functions to specify interpretation
- * of julong, the 64-bit unsigned integer type,
- * e.g. for win32 is "%I64u", for linux is "%llu"
- */
-const char * javacall_julong_format_specifier() {
-  return "%I64u";
-}
 
 #ifdef __cplusplus
 }

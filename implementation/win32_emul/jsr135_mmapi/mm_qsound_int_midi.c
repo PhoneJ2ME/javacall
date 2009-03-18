@@ -31,25 +31,14 @@ extern int isolateIDtoGM(int isolateID);
 /**
  * 
  */
-static javacall_result interactive_midi_create(int appId, int playerId,
+static javacall_handle interactive_midi_create(int appId, int playerId,
                                                jc_fmt mediaType, 
-                                               const javacall_utf16_string URI,
-                                               javacall_handle *pHandle)
+                                               const javacall_utf16_string URI)
 {
     IMIDIControl* pIM;
-    int gmIdx = -1;
-    javacall_result res = isolateIDtoGM( appId, &gmIdx );
-    
-    if( JAVACALL_OK != res )
-    {
-        gmDetach( gmIdx );
-        *pHandle = NULL;
-        return res;
-    }
-    
+    int gmIdx = isolateIDtoGM(appId);
     pIM = mQ234_PlayControl_getMIDIControl(g_QSoundGM[gmIdx].toneSynth);
-    *pHandle = (javacall_handle)pIM;
-    return res;
+    return (javacall_handle)pIM;
 }
 
 /**

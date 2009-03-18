@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -49,20 +49,13 @@ extern "C" {
  * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
  * OR returns the document this object contains, if there is any and it is available, 
  * or <code>NULL</code> otherwise.
- *
  * 
  * @param handle Pointer to the object representing this htmlobjectelement.
  * @param invocation_id Invocation identifier which MUST be used in the 
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
- * @param ret_value Pointer to the object representing 
- *   the document this object contains.
- *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmlobjectelement_get_content_document_finish function to complete the 
  *             operation,
@@ -78,15 +71,10 @@ javacall_dom_htmlobjectelement_get_content_document_start(javacall_handle handle
  * Forms request to the native engine and returns with JAVACALL_WOULD_BLOCK code 
  * OR returns the document this object contains, if there is any and it is available, 
  * or <code>NULL</code> otherwise.
- *
  * 
  * @param context The context saved during asynchronous operation.
- * @param ret_value Pointer to the object representing 
- *   the document this object contains.
- *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_htmlobjectelement_get_content_document_finish function to complete the 
  *             operation,

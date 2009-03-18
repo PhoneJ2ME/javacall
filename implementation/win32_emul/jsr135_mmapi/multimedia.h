@@ -20,18 +20,6 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions. 
- *
- * This software is provided "AS IS," without a warranty of any kind. ALL
- * EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING
- * ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
- * OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED. SUN AND ITS LICENSORS SHALL NOT
- * BE LIABLE FOR ANY DAMAGES OR LIABILITIES SUFFERED BY LICENSEE AS A RESULT
- * OF OR RELATING TO USE, MODIFICATION OR DISTRIBUTION OF THE SOFTWARE OR ITS
- * DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST
- * REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL,
- * INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY
- * OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE, EVEN
- * IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES
  */ 
 
 #ifndef __PORTING_MULTIMEDIA_H
@@ -215,9 +203,7 @@ typedef struct {
  * function pointer vector table for basic media functions
  */
 typedef struct {
-    javacall_result (*create)(int appId, int playerId, jc_fmt mediaType,
-                              const javacall_utf16_string URI,
-                              /*OUT*/ javacall_handle *pHandle);
+    javacall_handle (*create)(int appId, int playerId, jc_fmt mediaType, const javacall_utf16_string URI);
     javacall_result (*get_format)(javacall_handle handle, jc_fmt* fmt);
     javacall_result (*get_player_controls)(javacall_handle handle, int* controls);
     javacall_result (*close)(javacall_handle handle);

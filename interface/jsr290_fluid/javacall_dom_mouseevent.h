@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -56,9 +56,6 @@ extern "C" {
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_screen_x_finish function to complete the 
  *             operation,
@@ -78,7 +75,6 @@ javacall_dom_mouseevent_get_screen_x_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_screen_x_finish function to complete the 
  *             operation,
@@ -99,9 +95,6 @@ javacall_dom_mouseevent_get_screen_x_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_screen_y_finish function to complete the 
  *             operation,
@@ -121,7 +114,6 @@ javacall_dom_mouseevent_get_screen_y_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_screen_y_finish function to complete the 
  *             operation,
@@ -142,9 +134,6 @@ javacall_dom_mouseevent_get_screen_y_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_client_x_finish function to complete the 
  *             operation,
@@ -164,7 +153,6 @@ javacall_dom_mouseevent_get_client_x_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_client_x_finish function to complete the 
  *             operation,
@@ -185,9 +173,6 @@ javacall_dom_mouseevent_get_client_x_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_client_y_finish function to complete the 
  *             operation,
@@ -207,7 +192,6 @@ javacall_dom_mouseevent_get_client_y_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_client_y_finish function to complete the 
  *             operation,
@@ -227,9 +211,6 @@ javacall_dom_mouseevent_get_client_y_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_ctrl_key_finish function to complete the 
  *             operation,
@@ -248,7 +229,6 @@ javacall_dom_mouseevent_get_ctrl_key_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_ctrl_key_finish function to complete the 
  *             operation,
@@ -268,9 +248,6 @@ javacall_dom_mouseevent_get_ctrl_key_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_shift_key_finish function to complete the 
  *             operation,
@@ -289,7 +266,6 @@ javacall_dom_mouseevent_get_shift_key_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_shift_key_finish function to complete the 
  *             operation,
@@ -311,9 +287,6 @@ javacall_dom_mouseevent_get_shift_key_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_alt_key_finish function to complete the 
  *             operation,
@@ -334,7 +307,6 @@ javacall_dom_mouseevent_get_alt_key_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_alt_key_finish function to complete the 
  *             operation,
@@ -356,9 +328,6 @@ javacall_dom_mouseevent_get_alt_key_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_meta_key_finish function to complete the 
  *             operation,
@@ -379,7 +348,6 @@ javacall_dom_mouseevent_get_meta_key_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_meta_key_finish function to complete the 
  *             operation,
@@ -409,9 +377,6 @@ javacall_dom_mouseevent_get_meta_key_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_button_finish function to complete the 
  *             operation,
@@ -440,7 +405,6 @@ javacall_dom_mouseevent_get_button_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_button_finish function to complete the 
  *             operation,
@@ -461,9 +425,6 @@ javacall_dom_mouseevent_get_button_finish(void *context,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_related_target_finish function to complete the 
  *             operation,
@@ -483,7 +444,6 @@ javacall_dom_mouseevent_get_related_target_start(javacall_handle handle,
  * @param context The context saved during asynchronous operation.
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_get_related_target_finish function to complete the 
  *             operation,
@@ -509,9 +469,6 @@ javacall_dom_mouseevent_get_related_target_finish(void *context,
  *   method for a description of this parameter. 
  * @param cancelable_arg  Refer to the <code>UIEvent.initUIEvent()</code> 
  *   method for a description of this parameter. 
- * @param view_arg Pointer to the object of
- *    Refer to the <code>UIEvent.initUIEvent()</code> method 
- *   for a description of this parameter. 
  * @param detail_arg  Refer to the <code>UIEvent.initUIEvent()</code> 
  *   method for a description of this parameter. 
  * @param screen_x_arg  Specifies <code>MouseEvent.screenX</code>. 
@@ -529,9 +486,6 @@ javacall_dom_mouseevent_get_related_target_finish(void *context,
  *   <code>NULL</code>.   
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_init_mouse_event_finish function to complete the 
  *             operation,
@@ -544,7 +498,6 @@ javacall_dom_mouseevent_init_mouse_event_start(javacall_handle handle,
                                                javacall_const_utf16_string type_arg,
                                                javacall_bool can_bubble_arg,
                                                javacall_bool cancelable_arg,
-                                               javacall_handle view_arg,
                                                javacall_int32 detail_arg,
                                                javacall_int32 screen_x_arg,
                                                javacall_int32 screen_y_arg,
@@ -568,7 +521,6 @@ javacall_dom_mouseevent_init_mouse_event_start(javacall_handle handle,
  *   <code>NULL</code>.   
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_init_mouse_event_finish function to complete the 
  *             operation,
@@ -594,9 +546,6 @@ javacall_dom_mouseevent_init_mouse_event_finish(void *context);
  * @param can_bubble_arg  Refer to the <code>UIEvent.initUIEventNS()</code> 
  *   method for a description of this parameter. 
  * @param cancelable_arg  Refer to the <code>UIEvent.initUIEventNS()</code>
- *   method for a description of this parameter. 
- * @param view_arg Pointer to the object of
- *    Refer to the <code>UIEvent.initUIEventNS()</code> 
  *   method for a description of this parameter. 
  * @param detail_arg  Refer to the <code>UIEvent.initUIEventNS()</code> 
  *   method for a description of this parameter. 
@@ -626,9 +575,6 @@ javacall_dom_mouseevent_init_mouse_event_finish(void *context);
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_init_mouse_event_ns_finish function to complete the 
  *             operation,
@@ -642,7 +588,6 @@ javacall_dom_mouseevent_init_mouse_event_ns_start(javacall_handle handle,
                                                   javacall_const_utf16_string type_arg,
                                                   javacall_bool can_bubble_arg,
                                                   javacall_bool cancelable_arg,
-                                                  javacall_handle view_arg,
                                                   javacall_int32 detail_arg,
                                                   javacall_int32 screen_x_arg,
                                                   javacall_int32 screen_y_arg,
@@ -666,7 +611,6 @@ javacall_dom_mouseevent_init_mouse_event_ns_start(javacall_handle handle,
  *
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_mouseevent_init_mouse_event_ns_finish function to complete the 
  *             operation,

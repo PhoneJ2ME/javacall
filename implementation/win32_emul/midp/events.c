@@ -402,6 +402,7 @@ WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 
 
     switch (iMsg) {
+
     case WM_CLOSE:
         /*
          * Handle the "X" (close window) button by sending the AMS a shutdown

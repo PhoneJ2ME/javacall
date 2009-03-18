@@ -1,42 +1,28 @@
 /*
- *
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
+ * 2 only, as published by the Free Software Foundation. 
  * 
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
+ * included at /legal/license.txt). 
  * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA 
  * 
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
- *
- * This software is provided "AS IS," without a warranty of any kind. ALL
- * EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES, INCLUDING
- * ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
- * OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED. SUN AND ITS LICENSORS SHALL NOT
- * BE LIABLE FOR ANY DAMAGES OR LIABILITIES SUFFERED BY LICENSEE AS A RESULT
- * OF OR RELATING TO USE, MODIFICATION OR DISTRIBUTION OF THE SOFTWARE OR ITS
- * DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST
- * REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL,
- * INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY
- * OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE, EVEN
- * IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES
+ * information or have any questions. 
  */
  
-
-#include "javacall_defs.h"
+#include "multimedia.h"
 
 /* Very Simple PNG Encoder *************************************************/
  
@@ -48,8 +34,8 @@ typedef struct _PNGenc {
 
 static unsigned char png_magic[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
-static const int le_one = 1;
-static char *littleEndian = (char *) &le_one;
+static int one = 1;
+static char *littleEndian = (char *) &one;
 
 #define BITS            8
 #define ROWS_PER_GROUP  1
@@ -126,12 +112,12 @@ static unsigned long crc32(unsigned long crc, unsigned char *buf,
     crc = crc ^ 0xFFFFFFFFL;
     
     while (len >= 8) {
-    DOCRC8(buf);
-    len -= 8;
+        DOCRC8(buf);
+        len -= 8;
     }
     
     if (len) do {
-    DOCRC1(buf);
+        DOCRC1(buf);
     } while (--len);
     
     return crc ^ 0xFFFFFFFFL;
@@ -160,11 +146,11 @@ static unsigned long adler32(unsigned long adler,
     if (buf == NULL) return 1L;
     
     while (len > 0) {
-    s1 += *buf++;
-    s2 += s1;
-    len--;
-    s1 %= BASE;
-    s2 %= BASE;
+        s1 += *buf++;
+        s2 += s1;
+        len--;
+        s1 %= BASE;
+        s2 %= BASE;
     }
     return (s2 << 16) | s1;
 }
@@ -179,15 +165,15 @@ static void writelong(PNGEnc *enc,
     c = (unsigned char *)&num;
     
     if (*littleEndian) {
-    enc->outBuf[enc->offset++] = *(c+3);
-    enc->outBuf[enc->offset++] = *(c+2);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->outBuf[enc->offset++] = *(c+0);
+        enc->outBuf[enc->offset++] = *(c+3);
+        enc->outBuf[enc->offset++] = *(c+2);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->outBuf[enc->offset++] = *(c+0);
     } else {
-    enc->outBuf[enc->offset++] = *(c+0);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->outBuf[enc->offset++] = *(c+2);
-    enc->outBuf[enc->offset++] = *(c+3);
+        enc->outBuf[enc->offset++] = *(c+0);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->outBuf[enc->offset++] = *(c+2);
+        enc->outBuf[enc->offset++] = *(c+3);
     }
 }
 
@@ -196,23 +182,23 @@ static void writelongcrc(PNGEnc *enc, int num) {
     c = (unsigned char *)&num;
 
     if (*littleEndian) {
-    enc->crc = crc32(enc->crc, c+3, 1);
-    enc->outBuf[enc->offset++] = *(c+3);
-    enc->crc = crc32(enc->crc, c+2, 1);
-    enc->outBuf[enc->offset++] = *(c+2);
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+3, 1);
+        enc->outBuf[enc->offset++] = *(c+3);
+        enc->crc = crc32(enc->crc, c+2, 1);
+        enc->outBuf[enc->offset++] = *(c+2);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
     } else {
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->crc = crc32(enc->crc, c+2, 1);
-    enc->outBuf[enc->offset++] = *(c+2);
-    enc->crc = crc32(enc->crc, c+3, 1);
-    enc->outBuf[enc->offset++] = *(c+3);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+2, 1);
+        enc->outBuf[enc->offset++] = *(c+2);
+        enc->crc = crc32(enc->crc, c+3, 1);
+        enc->outBuf[enc->offset++] = *(c+3);
     }
 }
 
@@ -222,15 +208,15 @@ static void writewordrevcrc(PNGEnc *enc, short num){
     c = (unsigned char *)&num;
     
     if (*littleEndian) {
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
     } else {
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
     }
 }
 
@@ -238,15 +224,15 @@ static void writewordcrc(PNGEnc *enc, short s){
     unsigned char *c;
     c = (unsigned char *)&s;
     if (*littleEndian) {
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
     } else {
-    enc->crc = crc32(enc->crc, c+0, 1);
-    enc->outBuf[enc->offset++] = *(c+0);
-    enc->crc = crc32(enc->crc, c+1, 1);
-    enc->outBuf[enc->offset++] = *(c+1);
+        enc->crc = crc32(enc->crc, c+0, 1);
+        enc->outBuf[enc->offset++] = *(c+0);
+        enc->crc = crc32(enc->crc, c+1, 1);
+        enc->outBuf[enc->offset++] = *(c+1);
     }
 }
 
@@ -287,9 +273,9 @@ int javautil_media_get_png_size(int width, int height){
 }
 
 /**
- * Encode rgb888 format data to PNG data format (there is no compression)
+ * Encode RGB888 format data to PNG data format (there is no compression)
  * 
- * @param input     Pointer to rgb888 data
+ * @param input     Pointer to RGB565 data
  * @param output    Pointer to PNG encode buffer
  * @param width     Width of image
  * @param height    Height of image
@@ -331,36 +317,35 @@ int javautil_media_rgb_to_png(unsigned char *input,
 
     zcrc = 1L;
     for (i = 0; i < GROUPS; i++) {
-    writebytecrc(&enc, (unsigned char)(i == (GROUPS-1) ? 0x01 : 0)); 
-    /* not compressed */
-    writewordrevcrc(&enc, (short) GROUP_BYTES);
-    writewordrevcrc(&enc, (short) ~GROUP_BYTES);
+        writebytecrc(&enc, (unsigned char)(i == (GROUPS-1) ? 0x01 : 0)); /* not compressed */
+        writewordrevcrc(&enc, (short) GROUP_BYTES);
+        writewordrevcrc(&enc, (short) ~GROUP_BYTES);
 
-    for (j = 0; j < ROWS_PER_GROUP; j++) {
-        /* write PNG row filter - 0 = unfiltered */
-        zcrc = adler32(zcrc, &filter, 1);
-        writebytecrc(&enc, filter);
-        
-        /* write pixels */
-        for (k = 0; k < width; k++) {
-            if (*littleEndian) {
-                zcrc = adler32(zcrc, &(input[2]), 1);
-                writebytecrc(&enc, input[2]);
-                zcrc = adler32(zcrc, &(input[1]), 1);
-                writebytecrc(&enc, input[1]);
-                zcrc = adler32(zcrc, &(input[0]), 1);
-                writebytecrc(&enc, input[0]);
-            } else {
-                zcrc = adler32(zcrc, &(input[0]), 1);
-                writebytecrc(&enc, input[0]);
-                zcrc = adler32(zcrc, &(input[1]), 1);
-                writebytecrc(&enc, input[1]);
-                zcrc = adler32(zcrc, &(input[2]), 1);
-                writebytecrc(&enc, input[2]);
+        for (j = 0; j < ROWS_PER_GROUP; j++) {
+            /* write PNG row filter - 0 = unfiltered */
+            zcrc = adler32(zcrc, &filter, 1);
+            writebytecrc(&enc, filter);
+            
+            /* write pixels */
+            for (k = 0; k < width; k++) {
+                if (*littleEndian) {
+                    zcrc = adler32(zcrc, &(input[2]), 1);
+                    writebytecrc(&enc, input[2]);
+                    zcrc = adler32(zcrc, &(input[1]), 1);
+                    writebytecrc(&enc, input[1]);
+                    zcrc = adler32(zcrc, &(input[0]), 1);
+                    writebytecrc(&enc, input[0]);
+                } else {
+                    zcrc = adler32(zcrc, &(input[1]), 1);
+                    writebytecrc(&enc, input[1]);
+                    zcrc = adler32(zcrc, &(input[2]), 1);
+                    writebytecrc(&enc, input[2]);
+                    zcrc = adler32(zcrc, &(input[3]), 1);
+                    writebytecrc(&enc, input[3]);
+                }
+                input += 3;
             }
-            input += 3;
         }
-    }
     }
     
     writelongcrc(&enc, zcrc);
@@ -374,7 +359,6 @@ int javautil_media_rgb_to_png(unsigned char *input,
 
     return enc.offset;
 }
- 
 
 /**
  * Encode rgbX888 format data to PNG data format (there is no compression)

@@ -35,29 +35,23 @@ typedef struct javacall_interactive_midi_s {
 /**
  * 
  */
-static javacall_result interactive_midi_create(int isolateId, int playerId, 
+static javacall_handle interactive_midi_create(int isolateId, int playerId, 
                                                jc_fmt mediaType, 
-                                               const javacall_utf16_string URI,
-                                           /*OUT*/ javacall_handle *pJCHandle )
+                                               const javacall_utf16_string URI)
 {
-    javacall_result res = JAVACALL_FAIL;
     javacall_interactive_midi_s* pIM = 
         MALLOC(sizeof(javacall_interactive_midi_s));
 
-    if( NULL == pIM )
-    {
-        *pJCHandle = NULL;
-        return JAVACALL_OUT_OF_MEMORY;
+    if (pIM != NULL) {
+        javacall_result res;
+        pIM->hmOut = NULL;
+        res = javacall_open_midi_out(&(pIM->hmOut), JAVACALL_TRUE);
+        if (!JAVACALL_SUCCEEDED(res)) {
+            FREE(pIM);
+            pIM = NULL;
+        }
     }
-    pIM->hmOut = NULL;
-    res = javacall_open_midi_out(&(pIM->hmOut), JAVACALL_TRUE);
-    if (!JAVACALL_SUCCEEDED(res)) {
-        FREE(pIM);
-        *pJCHandle = NULL;
-        return res;
-    }
-    *pJCHandle = (javacall_handle)pIM;
-    return JAVACALL_OK;
+    return (javacall_handle)pIM;
 }
 
 /**

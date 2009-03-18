@@ -29,19 +29,9 @@
 #include "javautil_unicode.h"
 #include "javacall_memory.h"
 #include <stdio.h>
-#include "jpegencoder.h"
-#include "pngencoder.h"
 
 #define LIME_MMAPI_PACKAGE      "com.sun.mmedia"
 #define LIME_MMAPI_CLASS        "JavaCallBridge"
-
-#define AUDIO_CAPTURE_LOCATOR   L"capture://audio"
-#define VIDEO_CAPTURE_LOCATOR   L"capture://video"
-#define RADIO_CAPTURE_LOCATOR   L"capture://radio"
-#define DEVICE_TONE_LOCATOR     L"device://tone"
-#define DEVICE_MIDI_LOCATOR     L"device://midi"
-#define RTSP_PROTOCOL_PREFIX    L"rtsp://"
-
 
 static javacall_media_caps g_caps[] = 
 {
@@ -51,9 +41,6 @@ static javacall_media_caps g_caps[] =
     { JAVACALL_MEDIA_FORMAT_SP_MIDI, "audio/sp-midi",                     JAVACALL_MEDIA_MEMORY_PROTOCOL, 0 },
     { JAVACALL_MEDIA_FORMAT_TONE,    "audio/x-tone-seq audio/tone",       JAVACALL_MEDIA_MEMORY_PROTOCOL, 0 },
     { JAVACALL_MEDIA_FORMAT_RTP_L16, "audio/L16",                         0, JAVACALL_MEDIA_MEMORY_PROTOCOL },
-#ifdef ENABLE_MMAPI_DSHOW
-    { JAVACALL_MEDIA_FORMAT_RTP_MPA, "audio/X-MP3-draft-00",              0, JAVACALL_MEDIA_MEMORY_PROTOCOL },
-#endif //ENABLE_MMAPI_DSHOW
     { JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO, "audio/x-wav",                 JAVACALL_MEDIA_CAPTURE_PROTOCOL, 0 },
 #ifdef ENABLE_AMR
     { JAVACALL_MEDIA_FORMAT_AMR,     "audio/amr",                         JAVACALL_MEDIA_MEMORY_PROTOCOL, 0 },
@@ -244,7 +231,7 @@ javacall_result javacall_media_get_configuration(const javacall_media_configurat
 {
     g_cfg.audioEncoding         = "encoding=pcm&rate=22050&bits=16&channels=1";
     g_cfg.videoEncoding         = "encoding=rgb565";
-    g_cfg.videoSnapshotEncoding = "encoding=jpeg&quality=80 encoding=png";
+    g_cfg.videoSnapshotEncoding = "encoding=jpeg&quality=80";
 
     g_cfg.supportMixing         = JAVACALL_TRUE;
     g_cfg.supportRecording      = JAVACALL_TRUE;
@@ -372,12 +359,7 @@ jc_fmt fmt_str2enum( javacall_media_format_type fmt )
     JC_MM_ASSERT( JC_FMT_UNSUPPORTED == g_fmt_count - 1 );
 
     for( n = 0; n < g_fmt_count; n++ )
-    {
-        if( 0 == strcmp( fmt, g_fmt[ n ] ) )
-        { 
-            return (jc_fmt)n;
-        }
-    }
+        if( 0 == strcmp( fmt, g_fmt[ n ] ) ) return (jc_fmt)n;
 
     return JC_FMT_UNKNOWN;
 }
@@ -398,9 +380,6 @@ javacall_media_format_type fmt_mime2str( const char* mime )
     int          idx;
     unsigned int mimelen = strlen( mime );
     const char*  ct;
-    const char*  semicol_pos = strchr( mime, ';' );
-
-    if( NULL != semicol_pos ) mimelen = semicol_pos - mime;
 
     for( idx = 0; idx < nCaps; idx++ )
     {
@@ -485,11 +464,7 @@ javacall_result get_int_param(javacall_const_utf16_string ptr,
 #ifdef ENABLE_MMAPI_LIME
 extern media_interface g_audio_itf;
 extern media_interface g_video_itf;
-#endif // ENABLE_MMAPI_LIME
-
-#ifdef ENABLE_MMAPI_DSHOW
-extern media_interface g_dshow_itf;
-#endif // ENABLE_MMAPI_DSHOW
+#endif ENABLE_MMAPI_LIME
 
 extern media_interface g_qsound_itf;
 extern media_interface g_amr_audio_itf;
@@ -502,19 +477,6 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
 {
     switch( fmt )
     {
-
-#ifdef ENABLE_MMAPI_DSHOW
-    case JC_FMT_MPEG1_LAYER3:
-    case JC_FMT_MPEG1_LAYER3_PRO:
-    case JC_FMT_RTP_MPA:
-        return &g_dshow_itf;
-        break;
-#endif // ENABLE_MMAPI_DSHOW
-
-    case JC_FMT_RTP_L16:
-        return &g_rtp_itf;
-        break;
-
 #ifdef ENABLE_MMAPI_LIME
     case JC_FMT_MPEG_1:
     case JC_FMT_MPEG_4_SVP:
@@ -523,11 +485,8 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
     case JC_FMT_MOV:
         return &g_video_itf;
 
-#ifndef ENABLE_MMAPI_DSHOW // if both DSHOW and LIME are enabled, DSHOW overrides LIME
     case JC_FMT_MPEG1_LAYER3:
     case JC_FMT_MPEG1_LAYER3_PRO:
-#endif // ENABLE_MMAPI_DSHOW
-
     case JC_FMT_MPEG2_AAC:
     case JC_FMT_MPEG4_HE_AAC:
         return &g_audio_itf;
@@ -608,12 +567,8 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
 #ifdef ENABLE_AMR
         { L".amr",  JAVACALL_MEDIA_FORMAT_AMR    },
 #endif // ENABLE_AMR
-
-#if defined(ENABLE_MMAPI_DSHOW) || defined(ENABLE_MMAPI_LIME)
-        { L".mp3",  JAVACALL_MEDIA_FORMAT_MPEG1_LAYER3 },
-#endif // mp3
-
 #ifdef ENABLE_MMAPI_LIME
+        { L".mp3",  JAVACALL_MEDIA_FORMAT_MPEG1_LAYER3 },
         { L".mpg",  JAVACALL_MEDIA_FORMAT_MPEG_1       },
         { L".mov",  JAVACALL_MEDIA_FORMAT_MOV          },
         { L".3gp",  JAVACALL_MEDIA_FORMAT_VIDEO_3GPP   },
@@ -624,13 +579,6 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
 
     int i, extlen;
     javacall_const_utf16_string tail;
-
-    // do not guess formats for RTSP, it will be discovered on realize stage
-    if( 0 == _wcsnicmp( uri, RTSP_PROTOCOL_PREFIX, 
-                        min( (long)wcslen( RTSP_PROTOCOL_PREFIX ), uriLength ) ) )
-    {
-        return JAVACALL_MEDIA_FORMAT_UNKNOWN;
-    }
 
     for( i = 0; i < sizeof( map ) / sizeof( map[ 0 ] ); i++ )
     {
@@ -649,6 +597,28 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
 
     return JAVACALL_MEDIA_FORMAT_UNKNOWN;
 }
+
+/**
+ * Testing purpose API
+ */
+javacall_handle javacall_media_create2(int playerId, javacall_media_format_type mediaType,
+                                       const javacall_utf16* fileName,
+                                       int fileNameLength)
+{
+    return NULL;
+}
+
+/**
+ * Native player create.
+ * This function create internal information structure that will be used from other native API.
+ */
+
+#define AUDIO_CAPTURE_LOCATOR   L"capture://audio"
+#define VIDEO_CAPTURE_LOCATOR   L"capture://video"
+#define RADIO_CAPTURE_LOCATOR   L"capture://radio"
+#define DEVICE_TONE_LOCATOR     L"device://tone"
+#define DEVICE_MIDI_LOCATOR     L"device://midi"
+#define RTSP_PROTOCOL_PREFIX    L"rtsp://"
 
 /**
  * This function is called to get all the necessary return values from 
@@ -690,20 +660,6 @@ javacall_result javacall_media_get_event_data(javacall_handle handle,
     return JAVACALL_INVALID_ARGUMENT;
 }
 
-/**
- * Testing purpose API
- */
-javacall_handle javacall_media_create2(int playerId, javacall_media_format_type mediaType,
-                                       const javacall_utf16* fileName,
-                                       int fileNameLength)
-{
-    return NULL;
-}
-
-/**
- * Native player create.
- * This function create internal information structure that will be used from other native API.
- */
 javacall_result javacall_media_create(int appId,
                                       int playerId,
                                       javacall_const_utf16_string uri, 
@@ -711,7 +667,6 @@ javacall_result javacall_media_create(int appId,
                                       javacall_handle *handle)
 {
     javacall_impl_player* pPlayer = NULL;
-    javacall_result res = JAVACALL_FAIL;
 
     JC_MM_DEBUG_PRINT("javacall_media_create \n");
 
@@ -769,6 +724,13 @@ javacall_result javacall_media_create(int appId,
             pPlayer->mediaItfPtr      = &g_qsound_itf;
             pPlayer->downloadByDevice = JAVACALL_TRUE;
         }
+        else if( 0 == _wcsnicmp( uri, RTSP_PROTOCOL_PREFIX, 
+                           min( (long)wcslen( RTSP_PROTOCOL_PREFIX ), uriLength ) ) )
+        {
+            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_UNKNOWN;
+            pPlayer->mediaItfPtr      = &g_rtp_itf;
+            pPlayer->downloadByDevice = JAVACALL_FALSE;
+        }
         else
         {
             pPlayer->mediaType   = fmt_guess_from_url( uri, uriLength );
@@ -791,22 +753,22 @@ javacall_result javacall_media_create(int appId,
     {
         JC_MM_ASSERT( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, create) );
 
-        res =
+        pPlayer->mediaHandle =
             pPlayer->mediaItfPtr->vptrBasic->create( 
                 appId, playerId, 
                 fmt_str2enum(pPlayer->mediaType), 
-                pPlayer->uri, &pPlayer->mediaHandle );
+                pPlayer->uri );
 
         if( NULL != pPlayer->mediaHandle )
         {
             *handle = pPlayer;
+            return JAVACALL_OK;
         }
         else
         {
             FREE( pPlayer );
-            *handle = NULL;
+            return JAVACALL_FAIL;
         }
-        return res;
     }
     else
     {
@@ -821,7 +783,6 @@ javacall_result javacall_media_realize(javacall_handle handle,
                                        long mimeLength)
 {
     javacall_result ret     = JAVACALL_FAIL;
-    javacall_result ret_from_create = JAVACALL_OK;
     javacall_impl_player*  pPlayer = (javacall_impl_player*)handle;
     char* cmime;
 
@@ -860,15 +821,15 @@ javacall_result javacall_media_realize(javacall_handle handle,
             {
                 JC_MM_ASSERT( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, create) );
 
-                ret_from_create =
+                pPlayer->mediaHandle =
                     pPlayer->mediaItfPtr->vptrBasic->create( 
                     pPlayer->appId, pPlayer->playerId, 
                     fmt_str2enum(pPlayer->mediaType),
-                    pPlayer->uri, &pPlayer->mediaHandle );
+                    pPlayer->uri );
 
                 if( NULL == pPlayer->mediaHandle )
                 {
-                    return ret_from_create;
+                    return JAVACALL_FAIL;
                 }
             }
             else
@@ -889,11 +850,6 @@ javacall_result javacall_media_realize(javacall_handle handle,
         ret = JAVACALL_OK;
     }
 
-    if( JAVACALL_OK == ret && JAVACALL_NO_AUDIO_DEVICE == ret_from_create )
-    {
-        ret = JAVACALL_NO_AUDIO_DEVICE;
-    }
-        
     return ret;
 }
 
@@ -1514,7 +1470,8 @@ extern int mmaudio_tone_note(long isolateId, long note, long duration, long volu
  * Tone to MIDI short message converter
  */
 javacall_result javacall_media_play_tone(int appId, long note, long duration, long volume){
-    return mmaudio_tone_note(appId, note, duration, volume);
+    mmaudio_tone_note(appId, note, duration, volume);
+    return JAVACALL_OK;
 }
 
 javacall_result javacall_media_play_dualtone(int appId, long noteA, long noteB, long duration, long volume)
@@ -2397,98 +2354,4 @@ javacall_result javacall_media_skip_frames(javacall_handle handle, /*INOUT*/ lon
     }
 
     return ret;
-}
-
-
-#define JFIF_HEADER_MAXIMUM_LENGTH 1024
-/**
- * Encodes given raw RGB888 image to specified format.
- * 
- * @param rgb888        [IN] soure raw image to be encoded
- * @param width         [IN] source image width
- * @param height        [IN] source image height
- * @param encode        [IN]destination format
- * @param quality       [IN]quality of encoded image (for format
- *                      with losses)
- * @param result_buffer [OUT]a pointer where result buffer will
- *                      be stored
- * @param result_buffer_len [OUT] a pointer for result buffer
- *                          size
- * @param context       [OUT] a context saved during
- *                      asynchronous operation
- * 
- * @return  JAVACALL_OK  in case of success,
- *          JAVACALL_OUT_OF_MEMORY if there is no memory for
- *          destination buffer
- *          JAVACALL_FAIL if encoder failed
- *          JAVACALL_WOULD_BLOCK if operation requires time to
- *          complete, an application should call
- *          <tt>javacall_media_encode_finish</tt> to get result
- */
-javacall_result javacall_media_encode_start(javacall_uint8* rgb888, 
-                                      javacall_uint8 width, 
-                                      javacall_uint8 height,
-                                      javacall_encoder_type encode,
-                                      javacall_uint8 quality,
-                                      javacall_uint8** result_buffer,
-                                            javacall_uint32* result_buffer_len,
-                                            javacall_handle* context) {
-    if (JAVACALL_JPEG_ENCODER == encode) {
-        /// It's hard to suppose, how large will be jpeg image 
-        int nWidth = ((width+7)&(~7));
-        int nHeight = ((height+7)&(~7));
-        int jpegLen = nWidth*nHeight*5 + JFIF_HEADER_MAXIMUM_LENGTH;
-        *result_buffer = javacall_malloc(jpegLen);
-        if (NULL != *result_buffer) {
-            *result_buffer_len = RGBToJPEG(rgb888, width, height, quality, 
-                                           *result_buffer, JPEG_ENCODER_COLOR_RGB);
-            return (*result_buffer_len > 0) ? JAVACALL_OK : JAVACALL_FAIL;
-        }
-    } else if (JAVACALL_PNG_ENCODER == encode) {
-        int pngLen = javautil_media_get_png_size(width, height);
-        *result_buffer = javacall_malloc(pngLen);
-        if (NULL != *result_buffer) {
-            *result_buffer_len = javautil_media_rgb_to_png(rgb888, *result_buffer, 
-                                                               width, height);
-            return (*result_buffer_len > 0) ? JAVACALL_OK : JAVACALL_FAIL;
-        }
-    }
-
-    return JAVACALL_OUT_OF_MEMORY;
-}
-#undef JFIF_HEADER_MAXIMUM_LENGTH
-
-/**
- * Finish encode procedure for given raw RGB888 image.
- * 
- * @param result_buffer [OUT]a pointer where result buffer will
- *                      be stored
- * @param result_buffer_len [OUT] a pointer for result buffer
- *                          size
- * @param context       [OUT] a context saved during
- *                      asynchronous operation
- * 
- * @return  JAVACALL_OK  in case of success,
- *          JAVACALL_OUT_OF_MEMORY if there is no memory for
- *          destination buffer
- *          JAVACALL_FAIL if encoder failed
- *          JAVACALL_WOULD_BLOCK if operation requires time to
- *          complete, an application should call
- *          <tt>javacall_media_encode_finish</tt> to get result
- */
-javacall_result javacall_media_encode_finish(javacall_handle context,
-                                             javacall_uint8** result_buffer, javacall_uint32* result_buffer_len) {
-    // should never be called
-    return JAVACALL_FAIL;
-}
-
-/**
- * Release a data was acuired by <tt>javacall_media_encode</tt>
- * 
- * @param result_buffer     a pointer to a buffer need to be
- *                          released
- * @param result_buffer_len the buffer length
- */
-void javacall_media_release_data(javacall_uint8* result_buffer, javacall_uint32 result_buffer_len) {
-    javacall_free(result_buffer);
 }

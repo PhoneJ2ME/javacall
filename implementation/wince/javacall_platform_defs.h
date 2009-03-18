@@ -1,6 +1,6 @@
 /*
  *
- * Copyright  1990-2007 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -77,12 +77,6 @@ typedef unsigned __int16 javacall_uint16;
  * @brief 32 bit interger type
  */
 typedef __int32 javacall_int32;
-
-/**
- * @typedef javacall_uint32
- * @brief 32 bit unsigned integer type
- */
-typedef unsigned __int32 javacall_uint32;
 
 /**
  * @typedef javacall_int64

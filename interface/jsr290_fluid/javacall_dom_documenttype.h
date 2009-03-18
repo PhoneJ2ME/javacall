@@ -1,5 +1,5 @@
 /*
- * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright  1990-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  * 
  * This program is free software; you can redistribute it and/or
@@ -59,12 +59,10 @@ extern "C" {
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
  * @param ret_value the name of the DTD
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_name_finish function to complete the 
@@ -75,7 +73,7 @@ javacall_result
 javacall_dom_documenttype_get_name_start(javacall_handle handle,
                                          javacall_int32 invocation_id,
                                          void **context,
-                                         /* OUT */ javacall_utf16** ret_value,
+                                         /* OUT */ javacall_utf16_string ret_value,
                                          /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -89,10 +87,9 @@ javacall_dom_documenttype_get_name_start(javacall_handle handle,
  *
  * @param context The context saved during asynchronous operation.
  * @param ret_value the name of the DTD
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -102,7 +99,7 @@ javacall_dom_documenttype_get_name_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_documenttype_get_name_finish(void *context,
-                                          /* OUT */ javacall_utf16** ret_value,
+                                          /* OUT */ javacall_utf16_string ret_value,
                                           /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -130,9 +127,6 @@ javacall_dom_documenttype_get_name_finish(void *context,
  * contained in the DTD
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_entities_finish function to complete the 
  *             operation,
@@ -166,7 +160,6 @@ javacall_dom_documenttype_get_entities_start(javacall_handle handle,
  * contained in the DTD
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_entities_finish function to complete the 
  *             operation,
@@ -192,9 +185,6 @@ javacall_dom_documenttype_get_entities_finish(void *context,
  *   a <code>NamedNodeMap</code> containing the notations declared in the DTD
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_notations_finish function to complete the 
  *             operation,
@@ -219,7 +209,6 @@ javacall_dom_documenttype_get_notations_start(javacall_handle handle,
  *   a <code>NamedNodeMap</code> containing the notations declared in the DTD
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_notations_finish function to complete the 
  *             operation,
@@ -242,12 +231,10 @@ javacall_dom_documenttype_get_notations_finish(void *context,
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
  * @param ret_value the public identifier of the external subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_public_id_finish function to complete the 
@@ -258,7 +245,7 @@ javacall_result
 javacall_dom_documenttype_get_public_id_start(javacall_handle handle,
                                               javacall_int32 invocation_id,
                                               void **context,
-                                              /* OUT */ javacall_utf16** ret_value,
+                                              /* OUT */ javacall_utf16_string ret_value,
                                               /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -271,10 +258,9 @@ javacall_dom_documenttype_get_public_id_start(javacall_handle handle,
  *
  * @param context The context saved during asynchronous operation.
  * @param ret_value the public identifier of the external subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -284,7 +270,7 @@ javacall_dom_documenttype_get_public_id_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_documenttype_get_public_id_finish(void *context,
-                                               /* OUT */ javacall_utf16** ret_value,
+                                               /* OUT */ javacall_utf16_string ret_value,
                                                /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -300,12 +286,10 @@ javacall_dom_documenttype_get_public_id_finish(void *context,
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
  * @param ret_value The system identifier of the external subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_system_id_finish function to complete the 
@@ -316,7 +300,7 @@ javacall_result
 javacall_dom_documenttype_get_system_id_start(javacall_handle handle,
                                               javacall_int32 invocation_id,
                                               void **context,
-                                              /* OUT */ javacall_utf16** ret_value,
+                                              /* OUT */ javacall_utf16_string ret_value,
                                               /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -329,10 +313,9 @@ javacall_dom_documenttype_get_system_id_start(javacall_handle handle,
  *
  * @param context The context saved during asynchronous operation.
  * @param ret_value The system identifier of the external subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -342,7 +325,7 @@ javacall_dom_documenttype_get_system_id_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_documenttype_get_system_id_finish(void *context,
-                                               /* OUT */ javacall_utf16** ret_value,
+                                               /* OUT */ javacall_utf16_string ret_value,
                                                /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -362,12 +345,10 @@ javacall_dom_documenttype_get_system_id_finish(void *context,
  *                  corresponding javanotify function.
  * @param context The context saved during asynchronous operation.
  * @param ret_value a String containing a representation of the internal subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
- *         JAVACALL_OUT_OF_MEMORY if function fails to allocate memory for the 
- *             context or if length of the returend string is more then 
+ *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
  *             javacall_dom_documenttype_get_internal_subset_finish function to complete the 
@@ -378,7 +359,7 @@ javacall_result
 javacall_dom_documenttype_get_internal_subset_start(javacall_handle handle,
                                                     javacall_int32 invocation_id,
                                                     void **context,
-                                                    /* OUT */ javacall_utf16** ret_value,
+                                                    /* OUT */ javacall_utf16_string ret_value,
                                                     /* INOUT */ javacall_uint32* ret_value_len);
 
 /**
@@ -395,10 +376,9 @@ javacall_dom_documenttype_get_internal_subset_start(javacall_handle handle,
  *
  * @param context The context saved during asynchronous operation.
  * @param ret_value a String containing a representation of the internal subset
- * @param ret_value_len Number of code_units of the returned string
+ * @param ret_value_len Length of the returned string
  * 
  * @return JAVACALL_OK if all done successfuly,
- *         JAVACALL_FAIL if error in native code occured
  *         JAVACALL_OUT_OF_MEMORY if length of the returend string is more then 
  *             specified in ret_value_len,
  *         JAVACALL_WOULD_BLOCK caller must call the 
@@ -408,7 +388,7 @@ javacall_dom_documenttype_get_internal_subset_start(javacall_handle handle,
  */
 javacall_result
 javacall_dom_documenttype_get_internal_subset_finish(void *context,
-                                                     /* OUT */ javacall_utf16** ret_value,
+                                                     /* OUT */ javacall_utf16_string ret_value,
                                                      /* INOUT */ javacall_uint32* ret_value_len);
 
 /** 

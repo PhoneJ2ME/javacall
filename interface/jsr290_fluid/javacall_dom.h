@@ -54,10 +54,6 @@ extern "C" {
  */
 typedef enum {
     /** 
-     * If no exception was thrown
-     */
-    JAVACALL_DOM_RUNTIME_ERR                 =  0x0,
-    /** 
      * If index or size is negative, or greater than the allowed value 
      */
     JAVACALL_DOM_INDEX_SIZE_ERR              =  0x1,
@@ -176,25 +172,6 @@ typedef enum {
     /** The node is a <code>Notation</code>. */
     JAVACALL_DOM_NOTATION_NODE               = 0xC
 } javacall_dom_node_types;
-
-/**
- * @enum javacall_dom_html_element_types
- * @brief types of HTMLElements
- */
-typedef enum {
-    /** The Element is a <code>HTMLElement</code>. */
-    JAVACALL_DOM_HTML_ELEMENT                  = 0x1,
-    /** The HTMLElement is a <code>HTMLFormElement</code>. */
-    JAVACALL_DOM_HTML_FORM_ELEMENT             = 0x2,
-    /** The HTMLElement is a <code>HTMLInputElement</code>. */
-    JAVACALL_DOM_HTML_INPUT_ELEMENT            = 0x3,
-    /** The HTMLElement is a <code>HTMLObjectElement</code>. */
-    JAVACALL_DOM_HTML_OBJECT_ELEMENT           = 0x4,
-    /** The HTMLElement is a <code>HTMLOptionElement</code>. */
-    JAVACALL_DOM_HTML_OPTION_ELEMENT           = 0x5,
-    /** The HTMLElement is a <code>HTMLTextAreaElement</code>. */
-    JAVACALL_DOM_HTML_TEXT_AREA_ELEMENT        = 0x6
-} javacall_dom_html_element_types;
 
 /** @} */
 
