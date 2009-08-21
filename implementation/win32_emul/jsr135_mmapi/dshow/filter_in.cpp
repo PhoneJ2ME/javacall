@@ -68,12 +68,10 @@ class filter_in_pin : public IPin, IAsyncReader
     AM_MEDIA_TYPE amt;
 
     CRITICAL_SECTION data_cs;
-    nat32 data_l;
-    void *data_p;
-    nat32 data_a;
-    nat32 data_total;
-
-    HANDLE event_unblock;
+    int64 stream_len;
+    nat32 requests;
+    IMediaSample *req_pms[1024];
+    DWORD_PTR req_user[1024];
 
     IPin *pconnected;
     bool flushing;
@@ -170,7 +168,7 @@ public:
     virtual HRESULT __stdcall JoinFilterGraph(IFilterGraph *pGraph, LPCWSTR pName);
     virtual HRESULT __stdcall QueryVendorInfo(LPWSTR *pVendorInfo);
     // filter_in
-    virtual bool data(nat32 len, const void *pdata);
+    virtual bool set_stream_length(int64 length);
     // IAMFilterMiscFlags
     virtual ULONG __stdcall GetMiscFlags();
 
@@ -470,7 +468,6 @@ HRESULT __stdcall filter_in_pin::Disconnect()
     if(!pconnected) return S_FALSE;
     pconnected->Release();
     pconnected = null;
-    SetEvent(event_unblock);
     return S_OK;
 }
 
@@ -621,7 +618,6 @@ HRESULT __stdcall filter_in_pin::BeginFlush()
 #endif
     if(flushing) return S_FALSE;
     flushing = true;
-    SetEvent(event_unblock);
     return S_OK;
 }
 
@@ -663,23 +659,55 @@ HRESULT __stdcall filter_in_pin::RequestAllocator(IMemAllocator *pPreferred, ALL
     return S_OK;
 }
 
-HRESULT __stdcall filter_in_pin::Request(IMediaSample * /*pSample*/, DWORD_PTR /*dwUser*/)
+HRESULT __stdcall filter_in_pin::Request(IMediaSample *pSample, DWORD_PTR dwUser)
 {
 #if write_level > 0
     print("filter_in_pin::Request called...\n");
 #endif
-    return E_FAIL;
+    if(!pSample) return E_POINTER;
+
+    if(flushing) return VFW_E_WRONG_STATE;
+
+    if(requests >= 1024) return E_OUTOFMEMORY;
+
+    req_pms[requests] = pSample;
+    req_user[requests] = dwUser;
+
+    requests++;
+
+    return S_OK;
 }
 
-HRESULT __stdcall filter_in_pin::WaitForNext(DWORD /*dwTimeout*/, IMediaSample **ppSample, DWORD_PTR * /*pdwUser*/)
+HRESULT __stdcall filter_in_pin::WaitForNext(DWORD dwTimeout, IMediaSample **ppSample, DWORD_PTR *pdwUser)
 {
 #if write_level > 0
     print("filter_in_pin::WaitForNext called...\n");
 #endif
     if(!ppSample) return E_POINTER;
     *ppSample = null;
-    if(flushing) return VFW_E_WRONG_STATE;
-    return E_FAIL;
+
+    for(;;)
+    {
+        // if(pfilter->state != State_Running || flushing) return VFW_E_WRONG_STATE;
+        if(flushing) return VFW_E_WRONG_STATE;
+
+        if(requests) break;
+
+        if(!dwTimeout) return S_OK;
+
+        Sleep(1);
+
+        if(dwTimeout != INFINITE) dwTimeout--;
+    }
+
+    requests--;
+
+    HRESULT r = SyncReadAligned(req_pms[requests]);
+    if(r != S_OK) return r;
+    *ppSample = req_pms[requests];
+    *pdwUser = req_user[requests];
+
+    return S_OK;
 }
 
 HRESULT __stdcall filter_in_pin::SyncReadAligned(IMediaSample *pSample)
@@ -699,65 +727,58 @@ HRESULT __stdcall filter_in_pin::SyncReadAligned(IMediaSample *pSample)
     }
     if(tstart < 0) return E_INVALIDARG;
     if(tend < tstart) return VFW_E_START_TIME_AFTER_END;
-    if(tstart > 0xffffffffi64 * 10000000i64) return E_INVALIDARG;
     if(tend - tstart > 0x7fffffffi64 * 10000000i64) return E_INVALIDARG;
     if(tstart % 10000000 || tend % 10000000) return E_INVALIDARG;
 
-    nat32 pos = nat32(tstart / 10000000);
-    nat32 len = nat32(tend / 10000000 - pos);
-
-#if write_level > 0
-    print("%u %u\n", pos, len);
-#endif
+    int64 pos = int64(tstart / 10000000);
+    int32 len = int32(tend / 10000000 - pos);
 
     EnterCriticalSection(&data_cs);
-    while(pconnected &&
-        !flushing &&
-        !(data_total < pos) &&
-        !(data_total - pos < len) &&
-        (data_l < pos || data_l - pos < len))
-    {
-        LeaveCriticalSection(&data_cs);
-        WaitForSingleObject(event_unblock, INFINITE);
-        EnterCriticalSection(&data_cs);
-    }
+
     if(flushing)
     {
         r = VFW_E_TIMEOUT;
     }
-    else if(data_l < pos)
-    {
-        /*if(data_finished) r = E_INVALIDARG;
-        else*/
-        {
-            len = 0;
-            r = S_FALSE;
-        }
-    }
     else
     {
-        if(data_l - pos < len)
+        bits8 *pb;
+        HRESULT r2 = pSample->GetPointer(&pb);
+        if(r2 != S_OK)
         {
-            len = data_l - pos;
-            r = S_FALSE;
+            if(FAILED(r2)) r = r2;
+            else r = VFW_E_RUNTIME_ERROR;
         }
-        else r = S_OK;
-        if(len)
+        else
         {
-            bits8 *pb;
-            HRESULT r2 = pSample->GetPointer(&pb);
-            if(r2 != S_OK)
+            int32 total_len = 0;
+            for(;;)
             {
-                if(FAILED(r2)) r = r2;
-                else r = VFW_E_RUNTIME_ERROR;
-            }
-            else
-            {
-                memcpy(pb, (bits8 *)data_p + pos, len);
+                int32 block_len;
+                player_callback::result r2 = pfilter->pcallback->data(
+                    pos + total_len,
+                    len - total_len,
+                    pb + total_len,
+                    &block_len);
+                if(r2 == player_callback::result_success)
+                {
+                    total_len += block_len;
+                    if(total_len == len)
+                    {
+                        r = S_OK;
+                        break;
+                    }
+                }
+                else
+                {
+                    r = E_FAIL;
+                    break;
+                }
             }
         }
     }
+
     LeaveCriticalSection(&data_cs);
+
     if(FAILED(r)) return r;
 
     HRESULT r2 = pSample->SetActualDataLength(len);
@@ -788,55 +809,47 @@ HRESULT __stdcall filter_in_pin::SyncRead(LONGLONG llPosition, LONG lLength, BYT
 
     if(llPosition < 0) return E_INVALIDARG;
     if(lLength < 0) return VFW_E_START_TIME_AFTER_END;
-    if(llPosition > 0xffffffff) return E_INVALIDARG;
 
-    nat32 pos = nat32(llPosition);
-    nat32 len = nat32(lLength);
+    if(llPosition > stream_len) return S_FALSE;
 
     HRESULT r;
+
     EnterCriticalSection(&data_cs);
-    while(pconnected &&
-        !flushing &&
-        !(data_total < pos) &&
-        !(data_total - pos < len) &&
-        (data_l < pos || data_l - pos < len))
-    {
-        LeaveCriticalSection(&data_cs);
-        WaitForSingleObject(event_unblock, INFINITE);
-        EnterCriticalSection(&data_cs);
-    }
+
     if(flushing)
     {
         r = VFW_E_TIMEOUT;
-#if write_level > 0
-        print("wp1, pconnected=%p, flushing=%s, pos=%u, len=%u, data_total=%u, data_l=%u\n", pconnected, flushing ? "true" : "false", pos, len, data_total, data_l);
-#endif
-    }
-    else if(data_l < pos)
-    {
-        /*if(data_finished) r = E_INVALIDARG;
-        else */r = S_FALSE;
-#if write_level > 0
-        print("wp2, pconnected=%p, flushing=%s, pos=%u, len=%u, data_total=%u, data_l=%u\n", pconnected, flushing ? "true" : "false", pos, len, data_total, data_l);
-#endif
     }
     else
     {
-        if(data_l - pos < len)
+        int32 total_len = 0;
+        for(;;)
         {
-            len = data_l - pos;
-            r = S_FALSE;
-#if write_level > 0
-            print("wp3, pconnected=%p, flushing=%s, pos=%u, len=%u, data_total=%u, data_l=%u\n", pconnected, flushing ? "true" : "false", pos, len, data_total, data_l);
-#endif
-        }
-        else r = S_OK;
-        if(len)
-        {
-            memcpy(pBuffer, (bits8 *)data_p + pos, len);
+            int32 block_len;
+            player_callback::result r2 = pfilter->pcallback->data(
+                llPosition + total_len,
+                lLength - total_len,
+                pBuffer + total_len,
+                &block_len);
+            if(r2 == player_callback::result_success)
+            {
+                total_len += block_len;
+                if(total_len == lLength)
+                {
+                    r = S_OK;
+                    break;
+                }
+            }
+            else
+            {
+                r = E_FAIL;
+                break;
+            }
         }
     }
+
     LeaveCriticalSection(&data_cs);
+
     return r;
 }
 
@@ -847,24 +860,9 @@ HRESULT __stdcall filter_in_pin::Length(LONGLONG *pTotal, LONGLONG *pAvailable)
 #endif
     if(!pTotal || !pAvailable) return E_POINTER;
 
-    if(data_total < 0xffffffff)
-    {
-        *pTotal = data_total;
-        *pAvailable = data_total;
-#if write_level > 0
-        print("%I64i %I64i\n", *pTotal, *pAvailable);
-#endif
-        return S_OK;
-    }
-    else
-    {
-        *pTotal = data_total;
-        *pAvailable = data_l;
-#if write_level > 0
-        print("%I64i %I64i\n", *pTotal, *pAvailable);
-#endif
-        return VFW_S_ESTIMATED;
-    }
+    *pTotal = stream_len;
+    *pAvailable = stream_len;
+    return S_OK;
 }
 
 //----------------------------------------------------------------------------
@@ -1068,8 +1066,6 @@ ULONG __stdcall filter_in_filter::Release()
     {
         if(pclock) pclock->Release();
         if(ppin->pconnected) ppin->pconnected->Release();
-        if(ppin->data_a) delete[] (bits8 *)ppin->data_p;
-        CloseHandle(ppin->event_unblock);
         DeleteCriticalSection(&ppin->data_cs);
         if(ppin->amt.pUnk) ppin->amt.pUnk->Release();
         if(ppin->amt.cbFormat) delete[] (bits8 *)ppin->amt.pbFormat;
@@ -1215,60 +1211,18 @@ HRESULT __stdcall filter_in_filter::QueryVendorInfo(LPWSTR *pVendorInfo)
     return E_NOTIMPL;
 }
 
-inline nat32 filter_in_filter::round(nat32 n)
-{
-    n--;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n++;
-    return n;
-}
-
-bool filter_in_filter::data(nat32 len, const void *pdata)
-{
-#if write_level > 0
-    print("filter_in_filter::data(%u, 0x%p) called...\n", len, pdata);
-#endif
-    if(len)
-    {
-        EnterCriticalSection(&ppin->data_cs);
-        if(pdata)
-        {
-            nat32 l2 = ppin->data_l + min(len, 0xffffffff - ppin->data_l);
-            if(ppin->data_a < l2)
-            {
-                nat32 a = round(l2);
-                void *p = new bits8[a];
-                if(ppin->data_a)
-                {
-                    if(ppin->data_l) memcpy(p, ppin->data_p, ppin->data_l);
-                    delete[] (bits8 *)ppin->data_p;
-                }
-                ppin->data_p = p;
-                ppin->data_a = a;
-            }
-            memcpy((bits8 *)ppin->data_p + ppin->data_l, pdata, len);
-            ppin->data_l = l2;
-        }
-        else
-        {
-            ppin->data_total = len;
-        }
-        LeaveCriticalSection(&ppin->data_cs);
-        SetEvent(ppin->event_unblock);
-    }
-    return true;
-}
-
 ULONG __stdcall filter_in_filter::GetMiscFlags()
 {
 #if write_level > 0
     print("filter_in_filter::GetMiscFlags called...\n");
 #endif
     return AM_FILTER_MISC_FLAGS_IS_SOURCE;
+}
+
+bool filter_in_filter::set_stream_length(int64 length)
+{
+    ppin->stream_len = length;
+    return true;
 }
 
 bool filter_in_filter::create(const AM_MEDIA_TYPE *pamt, player_callback *pcallback, filter_in_filter **ppfilter)
@@ -1291,20 +1245,11 @@ bool filter_in_filter::create(const AM_MEDIA_TYPE *pamt, player_callback *pcallb
         delete pfilter;
         return false;
     }
-    pfilter->ppin->event_unblock = CreateEvent(null, false, false, null);
-    if(!pfilter->ppin->event_unblock)
-    {
-        DeleteCriticalSection(&pfilter->ppin->data_cs);
-        delete pfilter->ppin;
-        delete pfilter;
-        return false;
-    }
     if(pamt->cbFormat)
     {
         pfilter->ppin->amt.pbFormat = new bits8[pamt->cbFormat];
         if(!pfilter->ppin->amt.pbFormat)
         {
-            CloseHandle(pfilter->ppin->event_unblock);
             DeleteCriticalSection(&pfilter->ppin->data_cs);
             delete pfilter->ppin;
             delete pfilter;
@@ -1325,9 +1270,8 @@ bool filter_in_filter::create(const AM_MEDIA_TYPE *pamt, player_callback *pcallb
     pfilter->ppin->amt.pUnk = pamt->pUnk;
     if(pfilter->ppin->amt.pUnk) pfilter->ppin->amt.pUnk->AddRef();
     pfilter->ppin->amt.cbFormat = pamt->cbFormat;
-    pfilter->ppin->data_l = 0;
-    pfilter->ppin->data_a = 0;
-    pfilter->ppin->data_total = 0xffffffff;
+    pfilter->ppin->stream_len = 0;
+    pfilter->ppin->requests = 0;
     pfilter->ppin->pconnected = null;
     pfilter->ppin->flushing = false;
     pfilter->pgraph = null;

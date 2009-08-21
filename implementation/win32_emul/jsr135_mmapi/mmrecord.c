@@ -93,7 +93,7 @@ static javacall_result recorder_create(int appId, int playerId,
     JC_MM_ASSERT( NULL != newHandle );
     memset( newHandle, 0, sizeof(recorder) );
 
-    newHandle->isolateId     = appId;
+    newHandle->appId         = appId;
     newHandle->playerId      = playerId;
 
     // defaults
@@ -128,9 +128,14 @@ static javacall_result recorder_close(javacall_handle handle)
     recorder* h = (recorder*)handle;
 
     FREE(h);
-    r = JAVACALL_OK;
 
-    return r;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_CLOSE_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
+
+    return JAVACALL_OK;
 }
 
 /**
@@ -141,51 +146,65 @@ static javacall_result recorder_destroy(javacall_handle handle)
     return JAVACALL_OK;
 }
 
-/**
- * NOTING TO DO
- */
-static javacall_result recorder_acquire_device(javacall_handle handle)
+static javacall_result recorder_realize(javacall_handle handle, 
+                                        javacall_const_utf16_string mime, 
+                                        long mimeLength)
 {
+    recorder* h = (recorder*)handle;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_REALIZE_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
+
     return JAVACALL_OK;
 }
 
-/**
- * NOTING TO DO
- */
-static javacall_result recorder_release_device(javacall_handle handle)
+static javacall_result recorder_prefetch(javacall_handle handle)
 {
+    recorder* h = (recorder*)handle;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_PREFETCH_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
+
     return JAVACALL_OK;
 }
 
-/**
- * NOTING TO DO
- */
+static javacall_result recorder_deallocate(javacall_handle handle)
+{
+    recorder* h = (recorder*)handle;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_DEALLOCATE_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
+
+    return JAVACALL_OK;
+}
+
 static javacall_result recorder_start(javacall_handle handle)
 {
+    recorder* h = (recorder*)handle;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_START_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
+
     return JAVACALL_OK;
 }
 
-/**
- * NOTING TO DO. Java'll call appropriate recording APIs.
- */
 static javacall_result recorder_stop(javacall_handle handle)
 {
-    return JAVACALL_OK;
-}
+    recorder* h = (recorder*)handle;
+    javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_STOP_FINISHED,
+                                     h->appId,
+                                     h->playerId, 
+                                     JAVACALL_OK, 
+                                     (void*)JAVACALL_OK );
 
-/**
- * NOTING TO DO.
- */
-static javacall_result recorder_pause(javacall_handle handle)
-{
-    return JAVACALL_OK;
-}
-
-/**
- * NOTING TO DO.
- */
-static javacall_result recorder_resume(javacall_handle handle)
-{
     return JAVACALL_OK;
 }
 
@@ -201,10 +220,9 @@ static javacall_result recorder_get_time(javacall_handle handle, long* ms)
 /**
  * NOTING TO DO.
  */
-static javacall_result recorder_set_time(javacall_handle handle, long* ms)
+static javacall_result recorder_set_time(javacall_handle handle, long ms)
 {
-    *ms = -1;
-    return JAVACALL_OK;
+    return JAVACALL_FAIL;
 }
  
 /**
@@ -429,15 +447,11 @@ static media_basic_interface _recorder_basic_itf = {
     NULL,
     recorder_close,
     recorder_destroy,
-    recorder_acquire_device,
-    recorder_release_device,
-    NULL,
-    NULL,
+    recorder_deallocate,
+    recorder_realize,
+    recorder_prefetch,
     recorder_start,
     recorder_stop,
-    recorder_pause,
-    recorder_resume,
-    NULL,
     NULL,
     NULL,
     NULL,
@@ -470,6 +484,7 @@ static media_record_interface _recorder_record_itf = {
 /* Global record interface */
 media_interface g_record_itf = {
     &_recorder_basic_itf,
+    NULL,
     NULL,
     NULL,
     NULL,

@@ -25,7 +25,6 @@
 #include "lime.h" // Lime has to be the first include for some reason
 
 #include "multimedia.h"
-#include "mmmididev.h"
 #include "javautil_unicode.h"
 #include "javacall_memory.h"
 #include <stdio.h>
@@ -42,6 +41,10 @@
 #define DEVICE_MIDI_LOCATOR     L"device://midi"
 #define RTSP_PROTOCOL_PREFIX    L"rtsp://"
 
+#ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+void extra_camera_controls_init( javacall_impl_player * player );
+void extra_camera_controls_cleanup( javacall_impl_player * player );
+#endif //ENABLE_EXTRA_CAMERA_CONTROLS
 
 static javacall_media_caps g_caps[] = 
 {
@@ -197,16 +200,16 @@ void mmSetStatusLine( const char* fmt, ... ) {
     char           str8[ 256 ];
     wchar_t        str16[ 256 ];
     int            str16_len;
-	va_list        args;
+    va_list        args;
     javacall_int64 res;
 
     static LimeFunction* f = NULL;
 
-	va_start(args, fmt);
+    va_start(args, fmt);
     vsprintf( str8, fmt, args );
-	va_end(args);
+    va_end(args);
     if (JAVACALL_OK == 
-        javautil_unicode_utf8_to_utf16(str8, strlen(str8), 
+        javautil_unicode_utf8_to_utf16(str8, (javacall_int32)strlen(str8), 
                                         str16, 256, &str16_len)) {
 
         if( NULL == f ) {
@@ -396,11 +399,11 @@ javacall_media_format_type fmt_enum2str( jc_fmt fmt )
 javacall_media_format_type fmt_mime2str( const char* mime )
 {
     int          idx;
-    unsigned int mimelen = strlen( mime );
+    unsigned int mimelen = (unsigned int)strlen( mime );
     const char*  ct;
     const char*  semicol_pos = strchr( mime, ';' );
 
-    if( NULL != semicol_pos ) mimelen = semicol_pos - mime;
+    if( NULL != semicol_pos ) mimelen = (unsigned int)(semicol_pos - mime);
 
     for( idx = 0; idx < nCaps; idx++ )
     {
@@ -432,7 +435,7 @@ javacall_result fmt_str2mime(
             int len;
             
             if (p == NULL) {
-                len = strlen(s);
+                len = (int)strlen(s);
             }
             else {
                 len = (int)(p - s);
@@ -482,20 +485,14 @@ javacall_result get_int_param(javacall_const_utf16_string ptr,
 
 //=============================================================================
 
-#ifdef ENABLE_MMAPI_LIME
-extern media_interface g_audio_itf;
-extern media_interface g_video_itf;
-#endif // ENABLE_MMAPI_LIME
-
 #ifdef ENABLE_JSR_135_DSHOW
 extern media_interface g_dshow_itf;
 #endif // ENABLE_JSR_135_DSHOW
 
 extern media_interface g_qsound_itf;
-extern media_interface g_amr_audio_itf;
-extern media_interface g_qsound_interactive_midi_itf;
 extern media_interface g_record_itf;
 extern media_interface g_fake_radio_itf;
+extern media_interface g_fake_camera_itf;
 extern media_interface g_rtp_itf;
 
 media_interface* fmt_enum2itf( jc_fmt fmt )
@@ -514,6 +511,7 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
     case JC_FMT_AMR:
     case JC_FMT_AMR_WB:
     case JC_FMT_AMR_WB_PLUS:
+    case JC_FMT_MS_PCM:
         return &g_dshow_itf;
         break;
 #endif // ENABLE_JSR_135_DSHOW
@@ -522,38 +520,11 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
         return &g_rtp_itf;
         break;
 
-#ifdef ENABLE_MMAPI_LIME
-    case JC_FMT_MPEG_4_AVC:
-    case JC_FMT_MOV:
-        return &g_video_itf;
-
-#ifndef ENABLE_JSR_135_DSHOW // if both DSHOW and LIME are enabled, DSHOW overrides LIME
-    case JC_FMT_MPEG1_LAYER3:
-    case JC_FMT_MPEG1_LAYER3_PRO:
-    case JC_FMT_VIDEO_3GPP:
-#endif // ENABLE_JSR_135_DSHOW
-
-    case JC_FMT_MPEG2_AAC:
-    case JC_FMT_MPEG4_HE_AAC:
-        return &g_audio_itf;
-#endif // ENABLE_MMAPI_LIME
-
     case JC_FMT_TONE:
     case JC_FMT_MIDI:
     case JC_FMT_SP_MIDI:
-    case JC_FMT_MS_PCM:
         return &g_qsound_itf;
 
-#if( defined( ENABLE_AMR ) && !defined( ENABLE_JSR_135_DSHOW ) )
-    case JC_FMT_AMR:
-    case JC_FMT_AMR_WB:
-    case JC_FMT_AMR_WB_PLUS:
-  #if( defined( AMR_USE_QSOUND ) || defined( AMR_USE_QT ) )
-        return &g_amr_audio_itf;
-  #elif( defined( AMR_USE_LIME ) )
-        return &g_audio_itf;
-  #endif // AMR_USE_**
-#endif // ENABLE_AMR
     default:
         return NULL;
     }
@@ -579,6 +550,9 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
 
 #define QUERY_MIDI_ITF(_pitf_, _method_)  \
     ( (_pitf_) && (_pitf_)->vptrMidi && (_pitf_)->vptrMidi->##_method_ )
+
+#define QUERY_TONE_ITF(_pitf_, _method_)  \
+    ( (_pitf_) && (_pitf_)->vptrTone && (_pitf_)->vptrTone->##_method_ )
 
 #define QUERY_METADATA_ITF(_pitf_, _method_)  \
     ( (_pitf_) && (_pitf_)->vptrMetaData && (_pitf_)->vptrMetaData->##_method_ )
@@ -606,15 +580,13 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
         javacall_media_format_type  fmt;
     } map[] =
     {
-        { L".wav",  JAVACALL_MEDIA_FORMAT_MS_PCM },
         { L".mid",  JAVACALL_MEDIA_FORMAT_MIDI   },
         { L".midi", JAVACALL_MEDIA_FORMAT_MIDI   },
         { L".jts",  JAVACALL_MEDIA_FORMAT_TONE   },
-#if defined( ENABLE_AMR ) || defined( ENABLE_JSR_135_DSHOW )
-        { L".amr",  JAVACALL_MEDIA_FORMAT_AMR    },
-#endif // ENABLE_AMR
 
-#if defined(ENABLE_JSR_135_DSHOW) || defined(ENABLE_MMAPI_LIME)
+#if defined(ENABLE_JSR_135_DSHOW)
+        { L".amr",  JAVACALL_MEDIA_FORMAT_AMR    },
+        { L".wav",  JAVACALL_MEDIA_FORMAT_MS_PCM },
         { L".mp3",  JAVACALL_MEDIA_FORMAT_MPEG1_LAYER3 },
         { L".flv",  JAVACALL_MEDIA_FORMAT_FLV },
         { L".fxm",  JAVACALL_MEDIA_FORMAT_FLV },
@@ -623,11 +595,9 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
         { L".mp4",  JAVACALL_MEDIA_FORMAT_MPEG_4_SVP   },
         { L".mpeg", JAVACALL_MEDIA_FORMAT_MPEG_1       },
         { L".mpg",  JAVACALL_MEDIA_FORMAT_MPEG_1       },
-#endif // mp3
-
-#ifdef ENABLE_MMAPI_LIME
         { L".mov",  JAVACALL_MEDIA_FORMAT_MOV          },
-#endif /* ENABLE_MMAPI_LIME */
+#endif
+
         { L".gif",  JAVACALL_MEDIA_FORMAT_UNSUPPORTED   },
         { L".wmv",  JAVACALL_MEDIA_FORMAT_UNSUPPORTED   }
     };
@@ -644,7 +614,7 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
 
     for( i = 0; i < sizeof( map ) / sizeof( map[ 0 ] ); i++ )
     {
-        extlen = wcslen( map[ i ].ext );
+        extlen = (int)wcslen( map[ i ].ext );
 
         if( uriLength > extlen )
         {
@@ -714,10 +684,10 @@ javacall_handle javacall_media_create2(int playerId, javacall_media_format_type 
  * Native player create.
  * This function create internal information structure that will be used from other native API.
  */
-javacall_result javacall_media_create(int appId,
-                                      int playerId,
+javacall_result javacall_media_create(javacall_int32 appId,
+                                      javacall_int32 playerId,
                                       javacall_const_utf16_string uri, 
-                                      long uriLength,
+                                      javacall_int32 uriLength,
                                       javacall_handle *handle)
 {
     javacall_impl_player* pPlayer = NULL;
@@ -749,15 +719,18 @@ javacall_result javacall_media_create(int appId,
             pPlayer->mediaItfPtr      = &g_record_itf;
             pPlayer->downloadByDevice = JAVACALL_TRUE;
         }
-#ifdef ENABLE_MMAPI_LIME
         else if( 0 == _wcsnicmp( uri, VIDEO_CAPTURE_LOCATOR, 
                            min( (long)wcslen( VIDEO_CAPTURE_LOCATOR ), uriLength ) ) )
         {
             pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO;
-            pPlayer->mediaItfPtr      = &g_video_itf;
+            pPlayer->mediaItfPtr      = &g_fake_camera_itf;
             pPlayer->downloadByDevice = JAVACALL_TRUE;
+
+            #ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+            pPlayer->pExtraCC         = NULL;
+            extra_camera_controls_init( pPlayer );
+            #endif //ENABLE_EXTRA_CAMERA_CONTROLS
         }
-#endif // ENABLE_MMAPI_LIME
         else if( 0 == _wcsnicmp( uri, RADIO_CAPTURE_LOCATOR, 
                            min( (long)wcslen( RADIO_CAPTURE_LOCATOR ), uriLength ) ) )
         {
@@ -784,17 +757,6 @@ javacall_result javacall_media_create(int appId,
             pPlayer->mediaType   = fmt_guess_from_url( uri, uriLength );
             pPlayer->mediaItfPtr = fmt_enum2itf( fmt_str2enum(pPlayer->mediaType) );
         }
-        
-#ifdef ENABLE_MMAPI_LIME
-        if (&g_audio_itf == pPlayer->mediaItfPtr || 
-            &g_video_itf == pPlayer->mediaItfPtr)
-        {
-            if (is_streamable(pPlayer->mediaType) == JAVACALL_TRUE)
-            {
-                pPlayer->downloadByDevice = JAVACALL_TRUE;
-            }
-        }
-#endif
     }
 
     if( NULL != pPlayer->mediaItfPtr )
@@ -824,6 +786,130 @@ javacall_result javacall_media_create(int appId,
         *handle = pPlayer;
         return JAVACALL_OK;
     }
+}
+
+javacall_result javacall_media_get_format(javacall_handle handle, 
+                              javacall_media_format_type /*OUT*/*format)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+    jc_fmt fmt = JC_FMT_UNKNOWN;
+
+    if (QUERY_BASIC_ITF(pItf, get_format)) {
+        ret = pItf->vptrBasic->get_format(pPlayer->mediaHandle, &fmt);
+        if( JAVACALL_OK == ret ) {
+            *format = fmt_enum2str( fmt );
+        }
+    } else {
+        *format = pPlayer->mediaType;
+        ret = JAVACALL_OK;
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_get_player_controls(javacall_handle handle,
+                              int /*OUT*/*controls)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, get_player_controls)) {
+        ret = pItf->vptrBasic->get_player_controls(pPlayer->mediaHandle,controls);
+    } else {
+        *controls = 0;
+        if(NULL!=pItf->vptrVolume)    *controls |= JAVACALL_MEDIA_CTRL_VOLUME;
+        if(NULL!=pItf->vptrVideo )    *controls |= JAVACALL_MEDIA_CTRL_VIDEO;
+        //if(NULL!=pItf->vptrSnapshot )
+        if(NULL!=pItf->vptrMidi  )    *controls |= JAVACALL_MEDIA_CTRL_MIDI;
+        if(NULL!=pItf->vptrMetaData)  *controls |= JAVACALL_MEDIA_CTRL_METADATA;
+        if(NULL!=pItf->vptrRate  )    *controls |= JAVACALL_MEDIA_CTRL_RATE;
+        if(NULL!=pItf->vptrTempo)     *controls |= JAVACALL_MEDIA_CTRL_TEMPO;
+        if(NULL!=pItf->vptrPitch)     *controls |= JAVACALL_MEDIA_CTRL_PITCH;
+        if(NULL!=pItf->vptrRecord)    *controls |= JAVACALL_MEDIA_CTRL_RECORD;
+        if(NULL!=pItf->vptrFposition) *controls |= JAVACALL_MEDIA_CTRL_FRAME_POSITIONING;
+        //if(NULL!=pItf->vptr) *controls |= JAVACALL_MEDIA_CTRL_STOPTIME;
+        //if(NULL!=pItf->vptr) *controls |= JAVACALL_MEDIA_CTRL_TONE;
+        return JAVACALL_OK;
+    }
+
+    return ret;
+}
+
+/**
+ *
+ */
+javacall_result javacall_media_close(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, close)) {
+        ret = pItf->vptrBasic->close(pPlayer->mediaHandle);
+    }
+
+    #ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+    if( JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO == pPlayer->mediaType )
+    {
+        extra_camera_controls_cleanup( pPlayer );
+        pPlayer->pExtraCC = NULL;
+    }
+    #endif //ENABLE_EXTRA_CAMERA_CONTROLS
+
+    return ret;
+}
+
+/**
+ *
+ */
+javacall_result javacall_media_destroy(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, destroy)) {
+        ret = pItf->vptrBasic->destroy(pPlayer->mediaHandle);
+    }
+
+    if( NULL != pPlayer )
+    {
+        if( NULL != pPlayer->uri ) FREE( pPlayer->uri );
+        FREE( pPlayer );
+    }
+
+    return ret;
+}
+
+/**
+ *
+ */
+javacall_result javacall_media_deallocate(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, deallocate)) {
+        ret = pItf->vptrBasic->deallocate(pPlayer->mediaHandle);
+    }
+    return ret;
+}
+
+/**
+ * Is this protocol handled by device? If yes return JAVACALL_OK.
+ */
+javacall_result javacall_media_download_handled_by_device(javacall_handle handle,
+                                                  /*OUT*/javacall_bool* isHandled)
+{
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+
+    *isHandled = pPlayer->downloadByDevice;
+
+    return JAVACALL_OK;
 }
 
 javacall_result javacall_media_realize(javacall_handle handle,
@@ -907,227 +993,6 @@ javacall_result javacall_media_realize(javacall_handle handle,
     return ret;
 }
 
-javacall_result javacall_media_get_format(javacall_handle handle, 
-                              javacall_media_format_type /*OUT*/*format)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-    jc_fmt fmt = JC_FMT_UNKNOWN;
-
-    if (QUERY_BASIC_ITF(pItf, get_format)) {
-        ret = pItf->vptrBasic->get_format(pPlayer->mediaHandle, &fmt);
-        if( JAVACALL_OK == ret ) {
-            *format = fmt_enum2str( fmt );
-        }
-    } else {
-        *format = pPlayer->mediaType;
-        ret = JAVACALL_OK;
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_get_player_controls(javacall_handle handle,
-                              int /*OUT*/*controls)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, get_player_controls)) {
-        ret = pItf->vptrBasic->get_player_controls(pPlayer->mediaHandle,controls);
-    } else {
-        *controls = 0;
-        if(NULL!=pItf->vptrVolume)    *controls |= JAVACALL_MEDIA_CTRL_VOLUME;
-        if(NULL!=pItf->vptrVideo )    *controls |= JAVACALL_MEDIA_CTRL_VIDEO;
-        //if(NULL!=pItf->vptrSnapshot )
-        if(NULL!=pItf->vptrMidi  )    *controls |= JAVACALL_MEDIA_CTRL_MIDI;
-        if(NULL!=pItf->vptrMetaData)  *controls |= JAVACALL_MEDIA_CTRL_METADATA;
-        if(NULL!=pItf->vptrRate  )    *controls |= JAVACALL_MEDIA_CTRL_RATE;
-        if(NULL!=pItf->vptrTempo)     *controls |= JAVACALL_MEDIA_CTRL_TEMPO;
-        if(NULL!=pItf->vptrPitch)     *controls |= JAVACALL_MEDIA_CTRL_PITCH;
-        if(NULL!=pItf->vptrRecord)    *controls |= JAVACALL_MEDIA_CTRL_RECORD;
-        if(NULL!=pItf->vptrFposition) *controls |= JAVACALL_MEDIA_CTRL_FRAME_POSITIONING;
-        //if(NULL!=pItf->vptr) *controls |= JAVACALL_MEDIA_CTRL_STOPTIME;
-        //if(NULL!=pItf->vptr) *controls |= JAVACALL_MEDIA_CTRL_TONE;
-        return JAVACALL_OK;
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_close(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, close)) {
-        ret = pItf->vptrBasic->close(pPlayer->mediaHandle);
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_destroy(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, destroy)) {
-        ret = pItf->vptrBasic->destroy(pPlayer->mediaHandle);
-    }
-
-    if( NULL != pPlayer )
-    {
-        if( NULL != pPlayer->uri ) FREE( pPlayer->uri );
-        FREE( pPlayer );
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_acquire_device(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, acquire_device)) {
-        ret = pItf->vptrBasic->acquire_device(pPlayer->mediaHandle);
-    } else {
-        ret = JAVACALL_OK;
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_release_device(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, release_device)) {
-        ret = pItf->vptrBasic->release_device(pPlayer->mediaHandle);
-    }
-    return ret;
-}
-
-/**
- * Is this protocol handled by device? If yes return JAVACALL_OK.
- */
-javacall_result javacall_media_download_handled_by_device(javacall_handle handle,
-                                                  /*OUT*/javacall_bool* isHandled)
-{
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-
-    *isHandled = pPlayer->downloadByDevice;
-
-    return JAVACALL_OK;
-}
-
-javacall_result javacall_media_get_java_buffer_size(javacall_handle handle,
-                                 long /*OUT*/*java_buffer_size, 
-                                 long /*OUT*/*first_data_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, get_java_buffer_size)) {
-        ret = pItf->vptrBasic->get_java_buffer_size(pPlayer->mediaHandle,
-                                                    java_buffer_size, 
-                                                    first_data_size);
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_set_whole_content_size(javacall_handle handle,
-                                 long whole_content_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, set_whole_content_size)) {
-        ret = pItf->vptrBasic->set_whole_content_size(pPlayer->mediaHandle, 
-                                                      whole_content_size);
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_get_buffer_address(javacall_handle handle, 
-                                 const void** /*OUT*/buffer, 
-                                 long /*OUT*/*max_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, get_buffer_address)) {
-        ret = pItf->vptrBasic->get_buffer_address(pPlayer->mediaHandle,
-                                                  buffer,
-                                                  max_size);
-    }
-
-    return ret;
-}
-
-/**
- * Store media data to temp file (except JTS type)
- */
-javacall_result javacall_media_do_buffering(javacall_handle handle, 
-                                            const void*     buffer,
-                                            long*           length,
-                                            javacall_bool*  need_more_data,
-                                            long*           min_data_size)
-{
-    long ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, do_buffering)) {
-        ret = pItf->vptrBasic->do_buffering(
-            pPlayer->mediaHandle, buffer, length,
-            need_more_data, min_data_size);
-    }
-
-    return ret;
-}
-
-/**
- * Delete temp file
- */
-javacall_result javacall_media_clear_buffer(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, clear_buffer)) {
-        ret = pItf->vptrBasic->clear_buffer(pPlayer->mediaHandle);
-    }
-
-    return ret;
-}
-
 javacall_result javacall_media_prefetch(javacall_handle handle){
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1175,32 +1040,105 @@ javacall_result javacall_media_stop(javacall_handle handle)
 }
 
 /**
- * Pause playing
+ * Notify the native player about stream length. This function is called if
+ * stream length is known.
+ *
+ * @param handle        Handle to the native player.
+ * @param length        Stream length, in bytes.
+ * 
+ * @retval JAVACALL_OK
+ * @retval JAVACALL_FAIL
  */
-javacall_result javacall_media_pause(javacall_handle handle)
+javacall_result javacall_media_stream_length(
+    javacall_handle handle,
+    javacall_int64 length)
 {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
 
-    if (QUERY_BASIC_ITF(pItf, pause)) {
-        ret = pItf->vptrBasic->pause(pPlayer->mediaHandle);
+    if (QUERY_BASIC_ITF(pItf, stream_length)) {
+        ret = pItf->vptrBasic->stream_length(pPlayer->mediaHandle,length);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_get_data_request(
+    javacall_handle handle,
+    /*OUT*/ javacall_int64 *offset,
+    /*OUT*/ javacall_int32 *length)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, get_data_request)) {
+        ret = pItf->vptrBasic->get_data_request(pPlayer->mediaHandle,
+                                                offset,
+                                                length);
     }
 
     return ret;
 }
 
 /**
- * Resume playing
+ * Tell the native player that requested data is ready to be written.
+ * This procedure must always be immediately followed by
+ * javacall_media_data_written call.
+ *
+ * @param handle  Handle to the native player.
+ * @param length  Length of data, in bytes.
+ * @param data    In - pointer to the return value, possibly null if
+ *                length equals to 0.
+ *                Out - buffer address to write data to, possibly null if
+ *                data must not be written.
+ *
+ * @retval JAVACALL_OK
+ * @retval JAVACALL_FAIL
  */
-javacall_result javacall_media_resume(javacall_handle handle)
+javacall_result javacall_media_data_ready(
+    javacall_handle handle,
+    javacall_int32 length,
+    /*OUT*/ void **data)
 {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
 
-    if (QUERY_BASIC_ITF(pItf, resume)) {
-        ret = pItf->vptrBasic->resume(pPlayer->mediaHandle);
+    if (QUERY_BASIC_ITF(pItf, data_ready)) {
+        ret = pItf->vptrBasic->data_ready(pPlayer->mediaHandle,
+                                          length,
+                                          data);
+    }
+
+    return ret;
+}
+
+/**
+ * Tell the native player that requested data has been written.
+ * 
+ * @param handle      Handle to the native player.
+ * @param length      Length of data actually written, in bytes.
+ * @param new_request Additional data requested.
+ * @param new_offset  New stream offset to read from.
+ * @param new_length  New buffer length.
+ * @param new_data    New buffer address.
+ * 
+ * @retval JAVACALL_OK
+ * @retval JAVACALL_FAIL   
+ */
+javacall_result javacall_media_data_written(
+    javacall_handle handle,
+    /*OUT*/ javacall_bool *new_request)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, data_written)) {
+        ret = pItf->vptrBasic->data_written(pPlayer->mediaHandle,
+                                            new_request);
     }
 
     return ret;
@@ -1209,7 +1147,7 @@ javacall_result javacall_media_resume(javacall_handle handle)
 /**
  * Get current position
  */
-javacall_result javacall_media_get_time(javacall_handle handle, long* ms)
+javacall_result javacall_media_get_media_time(javacall_handle handle, long* ms)
 {
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
@@ -1224,7 +1162,7 @@ javacall_result javacall_media_get_time(javacall_handle handle, long* ms)
 /**
  * Set current position
  */
-javacall_result javacall_media_set_time(javacall_handle handle, long* ms)
+javacall_result javacall_media_set_media_time(javacall_handle handle, long ms)
 {
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
@@ -1788,6 +1726,35 @@ javacall_result javacall_media_long_midi_event(javacall_handle handle,
 
     if (QUERY_MIDI_ITF(pItf, long_midi_event)) {
         ret = pItf->vptrMidi->long_midi_event(pPlayer->mediaHandle, data, offset, length);
+    }
+
+    return ret;
+}
+
+/* Tone Control functions */
+/*****************************************************************************/
+
+javacall_result javacall_media_tone_alloc_buffer(javacall_handle handle, int length, void** ptr)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_TONE_ITF(pItf, tone_alloc_buffer)) {
+        ret = pItf->vptrTone->tone_alloc_buffer(pPlayer->mediaHandle, length, ptr);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_tone_sequence_written(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_TONE_ITF(pItf, tone_sequence_written)) {
+        ret = pItf->vptrTone->tone_sequence_written(pPlayer->mediaHandle);
     }
 
     return ret;

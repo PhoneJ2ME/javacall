@@ -61,42 +61,90 @@ extern "C" {
  * @brief Multimedia notification type.
  */
 typedef enum {
-    /** Posted when a Player has reached the end of the media. */
-    JAVACALL_EVENT_MEDIA_END_OF_MEDIA = 1,      
-    /** Posted when the duration of a Player is updated. */    
-    JAVACALL_EVENT_MEDIA_DURATION_UPDATED, 
-    /** Record size limit is reached or no more space is available */
-    JAVACALL_EVENT_MEDIA_RECORD_SIZE_LIMIT,
-    /** Posted when an error occurs during the recording. */
-    JAVACALL_EVENT_MEDIA_RECORD_ERROR,          
+    /**
+     * Posted when the native player finished state control procedure.
+     *
+     * Additional data:
+     *  intParam1 - call result, exception code.
+     */
+    JAVACALL_EVENT_MEDIA_REALIZE_FINISHED = 1,
+    JAVACALL_EVENT_MEDIA_PREFETCH_FINISHED = 2,
+    JAVACALL_EVENT_MEDIA_START_FINISHED = 3,
+    JAVACALL_EVENT_MEDIA_STOP_FINISHED = 4,
+
+    /**
+     * Posted when the native player finished state control procedure.
+     *
+     * Additional data: none.
+     */
+    JAVACALL_EVENT_MEDIA_DEALLOCATE_FINISHED = 5,
+    JAVACALL_EVENT_MEDIA_CLOSE_FINISHED = 6,
+
+    /**
+     * Posted when the native player finished setting media time.
+     *
+     * Additional data:
+     *  intParam1 - actual media time set.
+     */
+    JAVACALL_EVENT_MEDIA_SET_MEDIA_TIME_FINISHED = 7,
+
+    /**
+     * Posted when the native player requests stream data.
+     *
+     * Additional data: none.
+     */
+    JAVACALL_EVENT_MEDIA_DATA_REQUEST = 8,
+
+    /**
+     * Posted when the native player requests stream length.
+     *
+     * Additional data: none.
+     */
+    JAVACALL_EVENT_MEDIA_LENGTH_REQUEST = 9,
+
     /** Posted when the system or another higher priority application has released 
         an exclusive device which is now available to the Player. */
-    JAVACALL_EVENT_MEDIA_DEVICE_AVAILABLE,      
+    JAVACALL_EVENT_MEDIA_DEVICE_AVAILABLE = 10,
+
     /** Posted when the system or another higher priority application has temporarily 
         taken control of an exclusive device which was previously available to the Player. */
-    JAVACALL_EVENT_MEDIA_DEVICE_UNAVAILABLE,    
-    /** Posted when the native player needs more media content from Java side. */
-    JAVACALL_EVENT_MEDIA_NEED_MORE_MEDIA_DATA,
-    /** Posted when the Player enters into a buffering mode. */
-    JAVACALL_EVENT_MEDIA_BUFFERING_STARTED,     
-    /** Posted when the Player leaves the buffering mode. */
-    JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED,
-    /** Posted when the volume changed from external action. */
-    JAVACALL_EVENT_MEDIA_VOLUME_CHANGED,
-    /** Posted when the blocked snapshot finished */
-    JAVACALL_EVENT_MEDIA_SNAPSHOT_FINISHED,
+    JAVACALL_EVENT_MEDIA_DEVICE_UNAVAILABLE = 11,
+
     /** Posted when an error had occurred. */
-    JAVACALL_EVENT_MEDIA_ERROR,
+    JAVACALL_EVENT_MEDIA_ERROR = 12,
+
+    /** Posted when a Player has reached the end of the media. */
+    JAVACALL_EVENT_MEDIA_END_OF_MEDIA = 13,
+
+    /** Posted when the duration of a Player is updated. */    
+    JAVACALL_EVENT_MEDIA_DURATION_UPDATED = 14,
+
+    /** Posted when the Player enters into a buffering mode. */
+    JAVACALL_EVENT_MEDIA_BUFFERING_STARTED = 15,
+
+    /** Posted when the Player leaves the buffering mode. */
+    JAVACALL_EVENT_MEDIA_BUFFERING_STOPPED = 16,
+
+    /** Posted when an error occurs during the recording. */
+    JAVACALL_EVENT_MEDIA_RECORD_ERROR = 17,
+
+    /** Record size limit is reached or no more space is available */
+    JAVACALL_EVENT_MEDIA_RECORD_SIZE_LIMIT = 18,
+
+    /** Posted when the volume changed from external action. */
+    JAVACALL_EVENT_MEDIA_VOLUME_CHANGED = 19,
+
     /** Posted when the System Volume level has changed. */
-    JAVACALL_EVENT_MEDIA_SYSTEM_VOLUME_CHANGED,
-    /** Posted when an ACM error has occurred. */
-    JAVACALL_EVENT_MEDIA_ACM_ERROR,
-    /** Posted when the video size changed. */
-    JAVACALL_EVENT_MEDIA_SIZE_CHANGED,
+    JAVACALL_EVENT_MEDIA_SYSTEM_VOLUME_CHANGED = 20,
+
+    /** Posted when the blocked snapshot finished */
+    JAVACALL_EVENT_MEDIA_SNAPSHOT_FINISHED = 21,
+
     /** 
      * All events that should be sent to Java listeners must be defined
      * above this marker.
      */
+
     JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER,
 
     /** Posted when the blocked start finished */
