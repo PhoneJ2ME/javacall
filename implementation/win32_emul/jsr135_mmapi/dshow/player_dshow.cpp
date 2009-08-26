@@ -147,13 +147,6 @@ class player_dshow : public player
         // int64 tc = 40200000;
         // pms->SetPositions(&tc, AM_SEEKING_AbsolutePositioning, null, 0);
 
-        hr = pmc->Pause();
-        if(FAILED(hr))
-        {
-            error("IMediaControl::Pause", hr);
-            return result_media;
-        }
-
         hr = pms->SetTimeFormat(&TIME_FORMAT_MEDIA_TIME);
         if(hr != S_OK)
         {
@@ -182,6 +175,13 @@ class player_dshow : public player
         else
         {
             return result_illegal_state;
+        }
+
+        HRESULT hr = pmc->Pause();
+        if(FAILED(hr))
+        {
+            error("IMediaControl::Pause", hr);
+            return result_media;
         }
 
         state = prefetched;
@@ -256,6 +256,9 @@ class player_dshow : public player
             return result_illegal_state;
         }
 
+        HRESULT hr = pmc->Stop();
+        if(FAILED(hr)) return result_media;
+
         state = realized;
 
         return result_success;
@@ -269,8 +272,6 @@ class player_dshow : public player
         }
         else if(state == realized || state == prefetched || state == started)
         {
-            pmc->Stop();
-            Sleep(100);
 #ifdef ENABLE_JSR_135_FMT_VP6_DSHOW_INT
                 pbf_flv_dec->Release();
 #endif
@@ -398,7 +399,14 @@ class player_dshow : public player
     // result add_player_listener(player_listener *pplayer_listener)
     // result remove_player_listener(player_listener *pplayer_listener)
 
-    bool data(nat32 len, const void *pdata)
+    result set_stream_length(int64 length)
+    {
+        if(pfi->set_stream_length(length))
+            return result_success;
+        return result_media;
+    }
+
+    /*bool data(nat32 len, const void *pdata)
     {
         if(state == unrealized || state == realized || state == prefetched ||
             state == started)
@@ -410,7 +418,7 @@ class player_dshow : public player
         }
 
         return pfi->data(len, pdata);
-    }
+    }*/
 
     friend bool create_player_dshow(nat32 len, const char16 *pformat, player_callback *pcallback, player **ppplayer);
 };

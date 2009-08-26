@@ -25,10 +25,10 @@
 #include "lime.h" // Lime has to be the first include for some reason
 
 #include "multimedia.h"
-#include "mmmididev.h"
 #include "javautil_unicode.h"
 #include "javacall_memory.h"
 #include <stdio.h>
+#include <process.h>
 #include "jpegencoder.h"
 #include "pngencoder.h"
 
@@ -42,6 +42,10 @@
 #define DEVICE_MIDI_LOCATOR     L"device://midi"
 #define RTSP_PROTOCOL_PREFIX    L"rtsp://"
 
+#ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+void extra_camera_controls_init( javacall_impl_player * player );
+void extra_camera_controls_cleanup( javacall_impl_player * player );
+#endif //ENABLE_EXTRA_CAMERA_CONTROLS
 
 static javacall_media_caps g_caps[] = 
 {
@@ -197,16 +201,16 @@ void mmSetStatusLine( const char* fmt, ... ) {
     char           str8[ 256 ];
     wchar_t        str16[ 256 ];
     int            str16_len;
-	va_list        args;
+    va_list        args;
     javacall_int64 res;
 
     static LimeFunction* f = NULL;
 
-	va_start(args, fmt);
+    va_start(args, fmt);
     vsprintf( str8, fmt, args );
-	va_end(args);
+    va_end(args);
     if (JAVACALL_OK == 
-        javautil_unicode_utf8_to_utf16(str8, strlen(str8), 
+        javautil_unicode_utf8_to_utf16(str8, (javacall_int32)strlen(str8), 
                                         str16, 256, &str16_len)) {
 
         if( NULL == f ) {
@@ -396,11 +400,11 @@ javacall_media_format_type fmt_enum2str( jc_fmt fmt )
 javacall_media_format_type fmt_mime2str( const char* mime )
 {
     int          idx;
-    unsigned int mimelen = strlen( mime );
+    unsigned int mimelen = (unsigned int)strlen( mime );
     const char*  ct;
     const char*  semicol_pos = strchr( mime, ';' );
 
-    if( NULL != semicol_pos ) mimelen = semicol_pos - mime;
+    if( NULL != semicol_pos ) mimelen = (unsigned int)(semicol_pos - mime);
 
     for( idx = 0; idx < nCaps; idx++ )
     {
@@ -432,7 +436,7 @@ javacall_result fmt_str2mime(
             int len;
             
             if (p == NULL) {
-                len = strlen(s);
+                len = (int)strlen(s);
             }
             else {
                 len = (int)(p - s);
@@ -482,20 +486,14 @@ javacall_result get_int_param(javacall_const_utf16_string ptr,
 
 //=============================================================================
 
-#ifdef ENABLE_MMAPI_LIME
-extern media_interface g_audio_itf;
-extern media_interface g_video_itf;
-#endif // ENABLE_MMAPI_LIME
-
 #ifdef ENABLE_JSR_135_DSHOW
 extern media_interface g_dshow_itf;
 #endif // ENABLE_JSR_135_DSHOW
 
 extern media_interface g_qsound_itf;
-extern media_interface g_amr_audio_itf;
-extern media_interface g_qsound_interactive_midi_itf;
 extern media_interface g_record_itf;
 extern media_interface g_fake_radio_itf;
+extern media_interface g_fake_camera_itf;
 extern media_interface g_rtp_itf;
 
 media_interface* fmt_enum2itf( jc_fmt fmt )
@@ -514,6 +512,7 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
     case JC_FMT_AMR:
     case JC_FMT_AMR_WB:
     case JC_FMT_AMR_WB_PLUS:
+    case JC_FMT_MS_PCM:
         return &g_dshow_itf;
         break;
 #endif // ENABLE_JSR_135_DSHOW
@@ -522,38 +521,11 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
         return &g_rtp_itf;
         break;
 
-#ifdef ENABLE_MMAPI_LIME
-    case JC_FMT_MPEG_4_AVC:
-    case JC_FMT_MOV:
-        return &g_video_itf;
-
-#ifndef ENABLE_JSR_135_DSHOW // if both DSHOW and LIME are enabled, DSHOW overrides LIME
-    case JC_FMT_MPEG1_LAYER3:
-    case JC_FMT_MPEG1_LAYER3_PRO:
-    case JC_FMT_VIDEO_3GPP:
-#endif // ENABLE_JSR_135_DSHOW
-
-    case JC_FMT_MPEG2_AAC:
-    case JC_FMT_MPEG4_HE_AAC:
-        return &g_audio_itf;
-#endif // ENABLE_MMAPI_LIME
-
     case JC_FMT_TONE:
     case JC_FMT_MIDI:
     case JC_FMT_SP_MIDI:
-    case JC_FMT_MS_PCM:
         return &g_qsound_itf;
 
-#if( defined( ENABLE_AMR ) && !defined( ENABLE_JSR_135_DSHOW ) )
-    case JC_FMT_AMR:
-    case JC_FMT_AMR_WB:
-    case JC_FMT_AMR_WB_PLUS:
-  #if( defined( AMR_USE_QSOUND ) || defined( AMR_USE_QT ) )
-        return &g_amr_audio_itf;
-  #elif( defined( AMR_USE_LIME ) )
-        return &g_audio_itf;
-  #endif // AMR_USE_**
-#endif // ENABLE_AMR
     default:
         return NULL;
     }
@@ -579,6 +551,9 @@ media_interface* fmt_enum2itf( jc_fmt fmt )
 
 #define QUERY_MIDI_ITF(_pitf_, _method_)  \
     ( (_pitf_) && (_pitf_)->vptrMidi && (_pitf_)->vptrMidi->##_method_ )
+
+#define QUERY_TONE_ITF(_pitf_, _method_)  \
+    ( (_pitf_) && (_pitf_)->vptrTone && (_pitf_)->vptrTone->##_method_ )
 
 #define QUERY_METADATA_ITF(_pitf_, _method_)  \
     ( (_pitf_) && (_pitf_)->vptrMetaData && (_pitf_)->vptrMetaData->##_method_ )
@@ -606,15 +581,13 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
         javacall_media_format_type  fmt;
     } map[] =
     {
-        { L".wav",  JAVACALL_MEDIA_FORMAT_MS_PCM },
         { L".mid",  JAVACALL_MEDIA_FORMAT_MIDI   },
         { L".midi", JAVACALL_MEDIA_FORMAT_MIDI   },
         { L".jts",  JAVACALL_MEDIA_FORMAT_TONE   },
-#if defined( ENABLE_AMR ) || defined( ENABLE_JSR_135_DSHOW )
-        { L".amr",  JAVACALL_MEDIA_FORMAT_AMR    },
-#endif // ENABLE_AMR
 
-#if defined(ENABLE_JSR_135_DSHOW) || defined(ENABLE_MMAPI_LIME)
+#if defined(ENABLE_JSR_135_DSHOW)
+        { L".amr",  JAVACALL_MEDIA_FORMAT_AMR    },
+        { L".wav",  JAVACALL_MEDIA_FORMAT_MS_PCM },
         { L".mp3",  JAVACALL_MEDIA_FORMAT_MPEG1_LAYER3 },
         { L".flv",  JAVACALL_MEDIA_FORMAT_FLV },
         { L".fxm",  JAVACALL_MEDIA_FORMAT_FLV },
@@ -623,11 +596,9 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
         { L".mp4",  JAVACALL_MEDIA_FORMAT_MPEG_4_SVP   },
         { L".mpeg", JAVACALL_MEDIA_FORMAT_MPEG_1       },
         { L".mpg",  JAVACALL_MEDIA_FORMAT_MPEG_1       },
-#endif // mp3
-
-#ifdef ENABLE_MMAPI_LIME
         { L".mov",  JAVACALL_MEDIA_FORMAT_MOV          },
-#endif /* ENABLE_MMAPI_LIME */
+#endif
+
         { L".gif",  JAVACALL_MEDIA_FORMAT_UNSUPPORTED   },
         { L".wmv",  JAVACALL_MEDIA_FORMAT_UNSUPPORTED   }
     };
@@ -644,7 +615,7 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
 
     for( i = 0; i < sizeof( map ) / sizeof( map[ 0 ] ); i++ )
     {
-        extlen = wcslen( map[ i ].ext );
+        extlen = (int)wcslen( map[ i ].ext );
 
         if( uriLength > extlen )
         {
@@ -660,250 +631,222 @@ javacall_media_format_type fmt_guess_from_url(javacall_const_utf16_string uri,
     return JAVACALL_MEDIA_FORMAT_UNKNOWN;
 }
 
-/**
- * This function is called to get all the necessary return values from 
- * the JavaCall Media functions that can run in asynchronous mode.
- * This function is called every time the following situation occurs.
- * A JSR-135 JavaCall API function returned JAVACALL_WOULD_BLOCK and continued
- * its 
- * execution in asynchronous mode. Then it finished the execution and send the
- * corresponding event to inform Java layer about it. Such events are described
- * in the description of the enum javacall_media_notification_type after the
- * event 
- * JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER. After the event Java
- * layer calls javacall_media_get_event_data() to get the return values.
- *
- * @param handle        handle to the native player that the function having
- *                      returned JAVACALL_WOULD_BLOCK was called for.
- * @param eventType     the type of the event, one of 
- *                      javacall_media_notification_type (but greater than 
- *                      JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER)
- * @param pResult       The event data passed as the param \a data to the
- *                      function javanotify_on_media_notification() while
- *                      sending the event
- * @param numArgs       the number of return values to get
- * @param args          the pointer to the array to copy the return values to
- *
- * @retval JAVACALL_INVALID_ARGUMENT    bad arguments or the function should
- *                                      not be called now for this native
- *                                      player and eventType (no event has been
- *                                      sent, see the function description)
- * @retval JAVACALL_OK                  Success
- * @retval JAVACALL_FAIL                General failure
- * @see JAVACALL_WOULD_BLOCK
- * @see javacall_media_notification_type
- * @see JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER
- */
 javacall_result javacall_media_get_event_data(javacall_handle handle, 
                     int eventType, void *pResult, int numArgs, void *args[])
 {
     return JAVACALL_INVALID_ARGUMENT;
 }
 
-/**
- * Testing purpose API
- */
-javacall_handle javacall_media_create2(int playerId, javacall_media_format_type mediaType,
-                                       const javacall_utf16* fileName,
-                                       int fileNameLength)
+/* Creation/destruction, format, controls *******************************************/
+
+static void create_player_thread( void* param )
 {
-    return NULL;
+    javacall_result       res;
+    javacall_impl_player* p = (javacall_impl_player*)param;
+
+    int appId    = p->appId;
+    int playerId = p->playerId;
+
+    p->mediaHandle = NULL;
+    res = p->mediaItfPtr->vptrBasic->create( p );
+
+
+    if( JAVACALL_OK != res )
+    {
+        if( NULL != p->uri  ) FREE( p->uri  );
+        if( NULL != p->mime ) FREE( p->mime );
+        FREE( p );
+        p = NULL;
+    }
+
+    javanotify_on_media_notification( JAVACALL_EVENT_MEDIA_CREATE_FINISHED,
+                                     appId,
+                                     playerId, 
+                                     res, NULL );
 }
 
-/**
- * Native player create.
- * This function create internal information structure that will be used from other native API.
- */
-javacall_result javacall_media_create(int appId,
-                                      int playerId,
-                                      javacall_const_utf16_string uri, 
-                                      long uriLength,
-                                      javacall_handle *handle)
+javacall_result javacall_media_create_managed_player(
+    javacall_int32              app_id,
+    javacall_int32              player_id,
+    javacall_int32              locator_len,
+    javacall_const_utf16_string locator,
+    /*OUT*/ javacall_handle*    handle)
 {
-    javacall_impl_player* pPlayer = NULL;
-    javacall_result res = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer 
+        = (javacall_impl_player*)MALLOC(sizeof(javacall_impl_player));
 
-    JC_MM_DEBUG_PRINT("javacall_media_create \n");
+    pPlayer->appId            = app_id;
+    pPlayer->playerId         = player_id;
+    pPlayer->downloadByDevice = JAVACALL_TRUE;
+    pPlayer->mime             = NULL;
+    pPlayer->streamLen        = -1;
 
-    pPlayer = MALLOC(sizeof(javacall_impl_player));
-
-    if( NULL == pPlayer ) return JAVACALL_OUT_OF_MEMORY;
-    pPlayer->appId            = appId;
-    pPlayer->playerId         = playerId;
-    pPlayer->uri              = NULL;
-    pPlayer->mediaHandle      = NULL;
-    pPlayer->mediaItfPtr      = NULL;
-    pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_UNKNOWN;
-    pPlayer->downloadByDevice = JAVACALL_FALSE;    
-
-    if( NULL != uri )
+    if( 0 == _wcsnicmp( locator, AUDIO_CAPTURE_LOCATOR, 
+                       min( (long)wcslen( AUDIO_CAPTURE_LOCATOR ), locator_len ) ) )
     {
-        pPlayer->uri = MALLOC( (uriLength + 1) * sizeof(javacall_utf16) );
-        memcpy( pPlayer->uri, uri, uriLength * sizeof(javacall_utf16) );
-        pPlayer->uri[ uriLength ] = (javacall_utf16)0;
+        pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO;
+        pPlayer->mediaItfPtr      = &g_record_itf;
+    }
+    else if( 0 == _wcsnicmp( locator, VIDEO_CAPTURE_LOCATOR, 
+                       min( (long)wcslen( VIDEO_CAPTURE_LOCATOR ), locator_len ) ) )
+    {
+        pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO;
+        pPlayer->mediaItfPtr      = &g_fake_camera_itf;
 
-        if( 0 == _wcsnicmp( uri, AUDIO_CAPTURE_LOCATOR, 
-                           min( (long)wcslen( AUDIO_CAPTURE_LOCATOR ), uriLength ) ) )
-        {
-            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_AUDIO;
-            pPlayer->mediaItfPtr      = &g_record_itf;
-            pPlayer->downloadByDevice = JAVACALL_TRUE;
-        }
-#ifdef ENABLE_MMAPI_LIME
-        else if( 0 == _wcsnicmp( uri, VIDEO_CAPTURE_LOCATOR, 
-                           min( (long)wcslen( VIDEO_CAPTURE_LOCATOR ), uriLength ) ) )
-        {
-            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO;
-            pPlayer->mediaItfPtr      = &g_video_itf;
-            pPlayer->downloadByDevice = JAVACALL_TRUE;
-        }
-#endif // ENABLE_MMAPI_LIME
-        else if( 0 == _wcsnicmp( uri, RADIO_CAPTURE_LOCATOR, 
-                           min( (long)wcslen( RADIO_CAPTURE_LOCATOR ), uriLength ) ) )
-        {
-            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_RADIO;
-            pPlayer->mediaItfPtr      = &g_fake_radio_itf;
-            pPlayer->downloadByDevice = JAVACALL_TRUE;
-        }
-        else if( 0 == _wcsnicmp( uri, DEVICE_TONE_LOCATOR, 
-                           min( (long)wcslen( DEVICE_TONE_LOCATOR ), uriLength ) ) )
-        {
-            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_DEVICE_TONE;
-            pPlayer->mediaItfPtr      = &g_qsound_itf;
-            pPlayer->downloadByDevice = JAVACALL_TRUE;
-        }
-        else if( 0 == _wcsnicmp( uri, DEVICE_MIDI_LOCATOR, 
-                           min( (long)wcslen( DEVICE_MIDI_LOCATOR ), uriLength ) ) )
-        {
-            pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_DEVICE_MIDI;
-            pPlayer->mediaItfPtr      = &g_qsound_itf;
-            pPlayer->downloadByDevice = JAVACALL_TRUE;
-        }
-        else
-        {
-            pPlayer->mediaType   = fmt_guess_from_url( uri, uriLength );
-            pPlayer->mediaItfPtr = fmt_enum2itf( fmt_str2enum(pPlayer->mediaType) );
-        }
-        
-#ifdef ENABLE_MMAPI_LIME
-        if (&g_audio_itf == pPlayer->mediaItfPtr || 
-            &g_video_itf == pPlayer->mediaItfPtr)
-        {
-            if (is_streamable(pPlayer->mediaType) == JAVACALL_TRUE)
-            {
-                pPlayer->downloadByDevice = JAVACALL_TRUE;
-            }
-        }
-#endif
+        #ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+        pPlayer->pExtraCC         = NULL;
+        extra_camera_controls_init( pPlayer );
+        #endif //ENABLE_EXTRA_CAMERA_CONTROLS
+    }
+    else if( 0 == _wcsnicmp( locator, RADIO_CAPTURE_LOCATOR, 
+                       min( (long)wcslen( RADIO_CAPTURE_LOCATOR ), locator_len ) ) )
+    {
+        pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_CAPTURE_RADIO;
+        pPlayer->mediaItfPtr      = &g_fake_radio_itf;
+    }
+    else if( 0 == _wcsnicmp( locator, DEVICE_TONE_LOCATOR, 
+                       min( (long)wcslen( DEVICE_TONE_LOCATOR ), locator_len ) ) )
+    {
+        pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_DEVICE_TONE;
+        pPlayer->mediaItfPtr      = &g_qsound_itf;
+    }
+    else if( 0 == _wcsnicmp( locator, DEVICE_MIDI_LOCATOR, 
+                       min( (long)wcslen( DEVICE_MIDI_LOCATOR ), locator_len ) ) )
+    {
+        pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_DEVICE_MIDI;
+        pPlayer->mediaItfPtr      = &g_qsound_itf;
     }
 
     if( NULL != pPlayer->mediaItfPtr )
     {
+        pPlayer->uri = MALLOC( (locator_len + 1) * sizeof(javacall_utf16) );
+        memcpy( pPlayer->uri, locator, locator_len * sizeof(javacall_utf16) );
+        pPlayer->uri[ locator_len ] = (javacall_utf16)0;
+
+        *handle = (javacall_handle)pPlayer;
         JC_MM_ASSERT( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, create) );
-
-        res =
-            pPlayer->mediaItfPtr->vptrBasic->create( 
-                appId, playerId, 
-                fmt_str2enum(pPlayer->mediaType), 
-                pPlayer->uri, &pPlayer->mediaHandle );
-
-        if( NULL != pPlayer->mediaHandle )
-        {
-            *handle = pPlayer;
-        }
-        else
-        {
-            FREE( pPlayer );
-            *handle = NULL;
-        }
-        return res;
+        _beginthread( create_player_thread, 0, pPlayer );
+        return JAVACALL_OK;
     }
     else
     {
-        // format still unknown, leave it to realize()
-        *handle = pPlayer;
-        return JAVACALL_OK;
+        FREE( pPlayer );
+        return JAVACALL_FAIL;
     }
 }
 
-javacall_result javacall_media_realize(javacall_handle handle,
-                                       javacall_const_utf16_string mime,
-                                       long mimeLength)
+
+javacall_result javacall_media_create_unmanaged_player(
+    javacall_int32              app_id,
+    javacall_int32              player_id,
+    javacall_int32              locator_len,
+    javacall_const_utf16_string locator,
+    javacall_int32              mime_len,
+    javacall_const_utf16_string mime,
+    javacall_bool               stream_len_known,
+    javacall_int64              stream_len,
+    /*OUT*/ javacall_handle*    handle )
 {
-    javacall_result ret     = JAVACALL_FAIL;
-    javacall_result ret_from_create = JAVACALL_OK;
-    javacall_impl_player*  pPlayer = (javacall_impl_player*)handle;
     char* cmime;
 
-    if( 0 == strcmp( JAVACALL_MEDIA_FORMAT_UNKNOWN, pPlayer->mediaType ) )
+    javacall_impl_player* pPlayer 
+        = (javacall_impl_player*)MALLOC(sizeof(javacall_impl_player));
+
+    pPlayer->appId            = app_id;
+    pPlayer->playerId         = player_id;
+    pPlayer->downloadByDevice = JAVACALL_FALSE;
+    pPlayer->mediaType        = JAVACALL_MEDIA_FORMAT_UNKNOWN;
+    pPlayer->mediaItfPtr      = NULL;
+    pPlayer->uri              = NULL;
+    pPlayer->streamLen        = (JAVACALL_TRUE==stream_len_known) ? stream_len : -1;
+
+    if( NULL != locator )
     {
-        if( NULL != mime )
+        pPlayer->uri = MALLOC( (locator_len + 1) * sizeof(javacall_utf16) );
+        memcpy( pPlayer->uri, locator, locator_len * sizeof(javacall_utf16) );
+        pPlayer->uri[ locator_len ] = (javacall_utf16)0;
+    }
+
+    if( NULL != mime )
+    {
+        pPlayer->mime = MALLOC( (mime_len + 1) * sizeof(javacall_utf16) );
+        memcpy( pPlayer->mime, mime, mime_len * sizeof(javacall_utf16) );
+        pPlayer->mime[ mime_len ] = (javacall_utf16)0;
+    }
+
+    if( NULL != pPlayer->uri )
+    {
+        pPlayer->mediaType   = fmt_guess_from_url( locator, locator_len );
+        pPlayer->mediaItfPtr = fmt_enum2itf( fmt_str2enum(pPlayer->mediaType) );
+    }
+
+    if( NULL == pPlayer->mediaItfPtr && NULL != pPlayer->mime )
+    {
+        JC_MM_ASSERT( mime_len > 0 );
+
+        cmime = MALLOC( mime_len + 1 );
+
+        if( NULL != cmime )
         {
-            JC_MM_ASSERT( mimeLength > 0 );
-
-            cmime = MALLOC( mimeLength + 1 );
-
-            if( NULL != cmime )
+            /* Implementation Note: 
+             * unsafe, mime must contain only ASCII chars. 
+             * NEED REVISIT
+             */
+            int wres = WideCharToMultiByte( CP_ACP, 0, mime, mime_len,
+                                            cmime, mime_len + 1, NULL, NULL );
+            if( wres )
             {
-                /* Implementation Note: 
-                 * unsafe, mime must contain only ASCII chars. 
-                 * NEED REVISIT
-                 */
-                int wres = WideCharToMultiByte( CP_ACP, 0, mime, mimeLength,
-                                                cmime, mimeLength + 1, NULL, NULL );
-                if( wres )
-                {
-                    cmime[ mimeLength ] = '\0';
-                    pPlayer->mediaType = fmt_mime2str( cmime );
-                }
+                cmime[ mime_len ] = '\0';
 
-                FREE( cmime );
+                pPlayer->mediaType   = fmt_mime2str( cmime );
+                pPlayer->mediaItfPtr = fmt_enum2itf( fmt_str2enum(pPlayer->mediaType) );
             }
-        }
 
-        if( NULL == pPlayer->mediaItfPtr && 
-            0 != strcmp( JAVACALL_MEDIA_FORMAT_UNKNOWN, pPlayer->mediaType ) )
-        {
-            pPlayer->mediaItfPtr = fmt_enum2itf( fmt_str2enum(pPlayer->mediaType) );
-
-            if( NULL != pPlayer->mediaItfPtr )
-            {
-                JC_MM_ASSERT( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, create) );
-
-                ret_from_create =
-                    pPlayer->mediaItfPtr->vptrBasic->create( 
-                    pPlayer->appId, pPlayer->playerId, 
-                    fmt_str2enum(pPlayer->mediaType),
-                    pPlayer->uri, &pPlayer->mediaHandle );
-
-                if( NULL == pPlayer->mediaHandle )
-                {
-                    return ret_from_create;
-                }
-            }
-            else
-            {
-                return JAVACALL_FAIL;
-            }
+            FREE( cmime );
         }
     }
-    if (NULL == pPlayer->mediaItfPtr) {
-        pPlayer->mediaType = JAVACALL_MEDIA_FORMAT_UNSUPPORTED;
+
+    if( NULL != pPlayer->mediaItfPtr )
+    {
+        *handle = (javacall_handle)pPlayer;
+        JC_MM_ASSERT( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, create) );
+        _beginthread( create_player_thread, 0, pPlayer );
+        return JAVACALL_OK;
+    }
+    else
+    {
+        if( NULL != pPlayer->uri  ) FREE( pPlayer->uri  );
+        if( NULL != pPlayer->mime ) FREE( pPlayer->mime );
+        FREE( pPlayer );
+        return JAVACALL_FAIL;
+    }
+}
+
+javacall_result javacall_media_destroy(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    #ifdef ENABLE_EXTRA_CAMERA_CONTROLS
+    if( JAVACALL_MEDIA_FORMAT_CAPTURE_VIDEO == pPlayer->mediaType )
+    {
+        extra_camera_controls_cleanup( pPlayer );
+        pPlayer->pExtraCC = NULL;
+    }
+    #endif //ENABLE_EXTRA_CAMERA_CONTROLS
+
+    if (QUERY_BASIC_ITF(pItf, destroy)) {
+        ret = pItf->vptrBasic->destroy(pPlayer->mediaHandle);
     }
 
-    if( QUERY_BASIC_ITF(pPlayer->mediaItfPtr, realize) )
+    if( NULL != pPlayer )
     {
-        ret = pPlayer->mediaItfPtr->vptrBasic->realize(
-            pPlayer->mediaHandle, mime, mimeLength );
-    } else {
-        ret = JAVACALL_OK;
+        if( NULL != pPlayer->uri  ) FREE( pPlayer->uri  );
+        if( NULL != pPlayer->mime ) FREE( pPlayer->mime );
+        FREE( pPlayer );
     }
 
-    if( JAVACALL_OK == ret && JAVACALL_NO_AUDIO_DEVICE == ret_from_create )
-    {
-        ret = JAVACALL_NO_AUDIO_DEVICE;
-    }
-        
     return ret;
 }
 
@@ -957,210 +900,8 @@ javacall_result javacall_media_get_player_controls(javacall_handle handle,
     return ret;
 }
 
-/**
- *
- */
-javacall_result javacall_media_close(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
+/* State management *****************************************************************/
 
-    if (QUERY_BASIC_ITF(pItf, close)) {
-        ret = pItf->vptrBasic->close(pPlayer->mediaHandle);
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_destroy(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, destroy)) {
-        ret = pItf->vptrBasic->destroy(pPlayer->mediaHandle);
-    }
-
-    if( NULL != pPlayer )
-    {
-        if( NULL != pPlayer->uri ) FREE( pPlayer->uri );
-        FREE( pPlayer );
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_acquire_device(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, acquire_device)) {
-        ret = pItf->vptrBasic->acquire_device(pPlayer->mediaHandle);
-    } else {
-        ret = JAVACALL_OK;
-    }
-
-    return ret;
-}
-
-/**
- *
- */
-javacall_result javacall_media_release_device(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, release_device)) {
-        ret = pItf->vptrBasic->release_device(pPlayer->mediaHandle);
-    }
-    return ret;
-}
-
-/**
- * Is this protocol handled by device? If yes return JAVACALL_OK.
- */
-javacall_result javacall_media_download_handled_by_device(javacall_handle handle,
-                                                  /*OUT*/javacall_bool* isHandled)
-{
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-
-    *isHandled = pPlayer->downloadByDevice;
-
-    return JAVACALL_OK;
-}
-
-javacall_result javacall_media_get_java_buffer_size(javacall_handle handle,
-                                 long /*OUT*/*java_buffer_size, 
-                                 long /*OUT*/*first_data_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, get_java_buffer_size)) {
-        ret = pItf->vptrBasic->get_java_buffer_size(pPlayer->mediaHandle,
-                                                    java_buffer_size, 
-                                                    first_data_size);
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_set_whole_content_size(javacall_handle handle,
-                                 long whole_content_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, set_whole_content_size)) {
-        ret = pItf->vptrBasic->set_whole_content_size(pPlayer->mediaHandle, 
-                                                      whole_content_size);
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_get_buffer_address(javacall_handle handle, 
-                                 const void** /*OUT*/buffer, 
-                                 long /*OUT*/*max_size)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, get_buffer_address)) {
-        ret = pItf->vptrBasic->get_buffer_address(pPlayer->mediaHandle,
-                                                  buffer,
-                                                  max_size);
-    }
-
-    return ret;
-}
-
-/**
- * Store media data to temp file (except JTS type)
- */
-javacall_result javacall_media_do_buffering(javacall_handle handle, 
-                                            const void*     buffer,
-                                            long*           length,
-                                            javacall_bool*  need_more_data,
-                                            long*           min_data_size)
-{
-    long ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, do_buffering)) {
-        ret = pItf->vptrBasic->do_buffering(
-            pPlayer->mediaHandle, buffer, length,
-            need_more_data, min_data_size);
-    }
-
-    return ret;
-}
-
-/**
- * Delete temp file
- */
-javacall_result javacall_media_clear_buffer(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, clear_buffer)) {
-        ret = pItf->vptrBasic->clear_buffer(pPlayer->mediaHandle);
-    }
-
-    return ret;
-}
-
-javacall_result javacall_media_prefetch(javacall_handle handle){
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, prefetch)) {
-        ret = pItf->vptrBasic->prefetch(pPlayer->mediaHandle);
-    } else {
-        ret = JAVACALL_OK;
-    }
-
-    return ret;
-}
-
-/**
- * Start playing (except JTS type)
- */
-javacall_result javacall_media_start(javacall_handle handle)
-{
-    javacall_result ret = JAVACALL_FAIL;
-    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
-    media_interface* pItf = pPlayer->mediaItfPtr;
-
-    if (QUERY_BASIC_ITF(pItf, start)) {
-        ret = pItf->vptrBasic->start(pPlayer->mediaHandle);
-    }
-
-    return ret;
-}
-
-/**
- * Stop playing
- */
 javacall_result javacall_media_stop(javacall_handle handle)
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1174,9 +915,6 @@ javacall_result javacall_media_stop(javacall_handle handle)
     return ret;
 }
 
-/**
- * Pause playing
- */
 javacall_result javacall_media_pause(javacall_handle handle)
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1190,26 +928,91 @@ javacall_result javacall_media_pause(javacall_handle handle)
     return ret;
 }
 
-/**
- * Resume playing
- */
-javacall_result javacall_media_resume(javacall_handle handle)
+javacall_result javacall_media_run(javacall_handle handle)
 {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
 
-    if (QUERY_BASIC_ITF(pItf, resume)) {
-        ret = pItf->vptrBasic->resume(pPlayer->mediaHandle);
+    if (QUERY_BASIC_ITF(pItf, run)) {
+        ret = pItf->vptrBasic->run(pPlayer->mediaHandle);
     }
 
     return ret;
 }
 
-/**
- * Get current position
- */
-javacall_result javacall_media_get_time(javacall_handle handle, long* ms)
+/* Data streaming *******************************************************************/
+
+javacall_result javacall_media_stream_length(
+    javacall_handle handle,
+    javacall_int64 length)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, stream_length)) {
+        ret = pItf->vptrBasic->stream_length(pPlayer->mediaHandle,length);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_get_data_request(
+    javacall_handle handle,
+    /*OUT*/ javacall_int64 *offset,
+    /*OUT*/ javacall_int32 *length)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, get_data_request)) {
+        ret = pItf->vptrBasic->get_data_request(pPlayer->mediaHandle,
+                                                offset,
+                                                length);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_data_ready(
+    javacall_handle handle,
+    javacall_int32 length,
+    /*OUT*/ void **data)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, data_ready)) {
+        ret = pItf->vptrBasic->data_ready(pPlayer->mediaHandle,
+                                          length,
+                                          data);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_data_written(
+    javacall_handle handle,
+    /*OUT*/ javacall_bool *new_request)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_BASIC_ITF(pItf, data_written)) {
+        ret = pItf->vptrBasic->data_written(pPlayer->mediaHandle,
+                                            new_request);
+    }
+
+    return ret;
+}
+
+/* Media time and duration **********************************************************/
+
+javacall_result javacall_media_get_media_time(javacall_handle handle, javacall_int32* ms)
 {
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
@@ -1221,10 +1024,7 @@ javacall_result javacall_media_get_time(javacall_handle handle, long* ms)
     return JAVACALL_FAIL;
 }
 
-/**
- * Set current position
- */
-javacall_result javacall_media_set_time(javacall_handle handle, long* ms)
+javacall_result javacall_media_set_media_time(javacall_handle handle, javacall_int32 ms)
 {
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
@@ -1236,10 +1036,7 @@ javacall_result javacall_media_set_time(javacall_handle handle, long* ms)
     return JAVACALL_FAIL;
 }
 
-/**
- * Get media duration
- */
-javacall_result javacall_media_get_duration(javacall_handle handle, long* ms)
+javacall_result javacall_media_get_duration(javacall_handle handle, javacall_int32* ms)
 {
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
     media_interface* pItf = pPlayer->mediaItfPtr;
@@ -1252,21 +1049,6 @@ javacall_result javacall_media_get_duration(javacall_handle handle, long* ms)
 
 /* MVM Support **********************************************************************/
 
-/**
- * This function called by JVM when this player goes to foreground.
- * There is only one foreground midlets but,
- * multiple player can be exits at this midlets.
- * So, there could be multiple players from JVM.
- * Device resource handling policy is not part of Java implementation.
- * It is totally depends on native layer's implementation.
- *
- * @param handle    Handle to the native player
- * @param option    MVM options.
- * Check about javacall_media_mvm_option type definition.
- *
- * @retval JAVACALL_OK    Something happened
- * @retval JAVACALL_FAIL  Nothing happened
- */
 javacall_result javacall_media_to_foreground(const javacall_handle handle,
                                              const int appId) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1280,21 +1062,6 @@ javacall_result javacall_media_to_foreground(const javacall_handle handle,
     return ret;
 }
 
-/**
- * This function called by JVM when this player goes to background.
- * There could be multiple background midlets.
- * Also, multiple player can be exits at this midlets.
- * Device resource handling policy is not part of Java implementation.
- * It is totally depends on
- * native layer's implementation.
- *
- * @param handle    Handle to the native player
- * @param option    MVM options.
- * Check about javacall_media_mvm_option type definition.
- *
- * @retval JAVACALL_OK    Something happened
- * @retval JAVACALL_FAIL  Nothing happened
- */
 javacall_result javacall_media_to_background(javacall_handle handle,
                                              const int appId) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1310,9 +1077,6 @@ javacall_result javacall_media_to_background(javacall_handle handle,
 
 /* VolumeControl Functions ************************************************/
 
-/**
- *
- */
 javacall_result javacall_media_get_volume(javacall_handle handle, long* level)
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1326,9 +1090,6 @@ javacall_result javacall_media_get_volume(javacall_handle handle, long* level)
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_set_volume(javacall_handle handle, long* level)
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1342,9 +1103,6 @@ javacall_result javacall_media_set_volume(javacall_handle handle, long* level)
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_is_mute(javacall_handle handle, javacall_bool* mute )
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1358,9 +1116,6 @@ javacall_result javacall_media_is_mute(javacall_handle handle, javacall_bool* mu
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_set_mute(javacall_handle handle, javacall_bool mute)
 {
     javacall_result ret = JAVACALL_FAIL;
@@ -1376,9 +1131,6 @@ javacall_result javacall_media_set_mute(javacall_handle handle, javacall_bool mu
 
 /* VideoControl Functions ************************************************/
 
-/**
- *
- */
 javacall_result javacall_media_set_video_color_key(javacall_handle handle,
                                                javacall_bool on,
                                                javacall_pixel color) {
@@ -1393,9 +1145,6 @@ javacall_result javacall_media_set_video_color_key(javacall_handle handle,
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_get_video_size(javacall_handle handle,
                                               long* width, long* height)
 {
@@ -1413,9 +1162,6 @@ javacall_result javacall_media_get_video_size(javacall_handle handle,
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_set_video_visible(javacall_handle handle,
                                                  javacall_bool visible)
 {
@@ -1430,9 +1176,6 @@ javacall_result javacall_media_set_video_visible(javacall_handle handle,
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_set_video_location(javacall_handle handle,
                                                   long x, long y, long w, long h)
 {
@@ -1460,9 +1203,6 @@ javacall_result javacall_media_set_video_full_screen_mode(javacall_handle handle
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_start_video_snapshot(javacall_handle handle,
                                                     const javacall_utf16* imageType,
                                                     long length)
@@ -1479,9 +1219,6 @@ javacall_result javacall_media_start_video_snapshot(javacall_handle handle,
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_get_video_snapshot_data_size(javacall_handle handle,
                                                             /*OUT*/ long* size)
 {
@@ -1497,9 +1234,6 @@ javacall_result javacall_media_get_video_snapshot_data_size(javacall_handle hand
     return ret;
 }
 
-/**
- *
- */
 javacall_result javacall_media_get_video_snapshot_data(javacall_handle handle,
                                                        /*OUT*/ char* buffer,
                                                        long size)
@@ -1520,9 +1254,7 @@ javacall_result javacall_media_get_video_snapshot_data(javacall_handle handle,
 /*****************************************************************************/
 
 extern int mmaudio_tone_note(long isolateId, long note, long duration, long volume);
-/**
- * Tone to MIDI short message converter
- */
+
 javacall_result javacall_media_play_tone(int appId, long note, long duration, long volume){
     return mmaudio_tone_note(appId, note, duration, volume);
 }
@@ -1532,149 +1264,13 @@ javacall_result javacall_media_play_dualtone(int appId, long noteA, long noteB, 
     return JAVACALL_NOT_IMPLEMENTED;
 }
 
-/**
- * MIDI note off
- */
 javacall_result javacall_media_stop_tone(int appId){
     return JAVACALL_OK;
 }
 
-//=============================================================================
-
-#if 0
-
-typedef struct {
-    volatile UINT       uID;
-    volatile DWORD      msg;
-    LONG                isLocked; /// used for simple spin-lock synchronization
-    HMIDIOUT            hmo;
-} tone_data_type;
-
-#define G_IS_FREE    0
-#define G_IS_LOCKED  1
-#define G_SLEEP_LOCK_TIME 50
-
-static tone_data_type _tone = {0, 0, G_IS_FREE, 0};
-/*
- * To synchronize access tone_timer_callback and javacall_media_play_tone to
- * struct _tone, spin-lock synchronization is used.
- * Global initialization of critical section is avoided.
- * Another way was to use TIME_KILL_SYNCHRONOUS flag in timeSetEvent,
- * but this is not supported by Win95 and firsts Win98
- */
-
-/**
- * MIDI note off callback
- */
-
-static int tryEnterLong(LONG* pValue) {
-    LONG oldValue;
-    /// In VC 6.0 and earlier InterlockedCompareExchange works with pointers
-#if (WINVER <= 0x400)
-    oldValue = (LONG)InterlockedCompareExchange(
-        (void**)pValue, (void*)G_IS_LOCKED, (void*)G_IS_FREE);
-#else
-    oldValue = InterlockedCompareExchange(pValue, G_IS_LOCKED, G_IS_FREE);
-#endif
-    return (oldValue == G_IS_FREE);
-}
-
-static void CALLBACK FAR
-    tone_timer_callback(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
-{
-    while (!tryEnterLong(&_tone.isLocked)) {
-        Sleep(G_SLEEP_LOCK_TIME);
-    }
-
-    if (_tone.uID) {
-        midiOutShortMsg(_tone.hmo, _tone.msg);
-        _tone.msg = 0;
-
-        javacall_close_midi_out(&_tone.hmo);
-
-        timeKillEvent(_tone.uID);
-        _tone.uID = 0;
-    }
-
-    _tone.isLocked = G_IS_FREE;
-}
-
-/**
- * Tone to MIDI short message converter
- */
-
-javacall_result javacall_media_play_tone(int appId, long note, long duration, long volume)
-{
-    javacall_result ret = JAVACALL_OK;
-
-    // force the duration be at least 200ms. This is a workaround
-    // for broken synthesizers, which can not render the very short
-    // tones properly.
-    if (duration < 200) {
-        duration = 200;
-    }
-
-    if (_tone.msg != 0) {
-        ret = JAVACALL_FAIL;
-    } else {
-        ret = javacall_open_midi_out(&_tone.hmo, JAVACALL_TRUE);
-    }
-
-    if (JAVACALL_SUCCEEDED(ret)) {
-        _tone.msg = (((volume & 0xFF) << 16) | (((note & 0xFF) << 8) | 0x90));
-        /* Note on at channel 0 */
-        midiOutShortMsg(_tone.hmo, _tone.msg);
-        _tone.msg &= 0xFFFFFF80;
-
-        #if WINVER >= 0x0501
-            _tone.uID = timeSetEvent(duration, 100, tone_timer_callback, 0,
-                TIME_ONESHOT | TIME_CALLBACK_FUNCTION | TIME_KILL_SYNCHRONOUS);
-        #else
-            _tone.uID = timeSetEvent(duration, 100, tone_timer_callback, 0,
-                TIME_ONESHOT | TIME_CALLBACK_FUNCTION);
-        #endif// WINVER >= 0x0501
-
-        if (0 == _tone.uID) {
-            midiOutShortMsg(_tone.hmo, _tone.msg);
-            _tone.msg = 0;
-            javacall_close_midi_out(&_tone.hmo);
-            ret = JAVACALL_FAIL;
-        }
-
-    }
-
-    return ret;
-}
-
-/**
- * MIDI note off
- */
-javacall_result javacall_media_stop_tone(void)
-{
-
-    /// this call is ok, because tone_timer_callback use synchronization
-    tone_timer_callback(_tone.uID, 0, 0, 0, 0);
-
-    return JAVACALL_OK;
-}
-
-#endif
-
 /* MIDIControl functions */
 /*****************************************************************************/
 
-/**
- * Get volume for the given channel.
- * The return value is independent of the master volume,
-  which is set and retrieved with VolumeControl.
- *
- * @param handle    Handle to the library
- * @param channel   0-15
- * @param volume    channel volume, 0-127, or -1 if not known
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_get_channel_volume(javacall_handle handle,
                                                   long channel,
                                                   /*OUT*/ long* volume) {
@@ -1689,18 +1285,6 @@ javacall_result javacall_media_get_channel_volume(javacall_handle handle,
     return ret;
 }
 
-/**
- * Set volume for the given channel. To mute, set to 0.
- * This sets the current volume for the channel and may be overwritten
-*  during playback by events in a MIDI sequence.
- *
- * @param handle    Handle to the library
- * @param channel   0-15
- * @param volume    channel volume, 0-127
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_set_channel_volume(javacall_handle handle,
                                                   long channel, long volume) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1714,19 +1298,6 @@ javacall_result javacall_media_set_channel_volume(javacall_handle handle,
     return ret;
 }
 
-/**
- * Set program of a channel.
- * This sets the current program for the channel and may be overwritten
- * during playback by events in a MIDI sequence.
- *
- * @param handle    Handle to the library
- * @param channel   0-15
- * @param bank      0-16383, or -1 for default bank
- * @param program   0-127
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_set_program(javacall_handle handle,
                                            long channel, long bank, long program) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1740,18 +1311,6 @@ javacall_result javacall_media_set_program(javacall_handle handle,
     return ret;
 }
 
-/**
- * Sends a short MIDI event to the device.
- *
- * @param handle    Handle to the library
- * @param type      0x80..0xFF, excluding 0xF0 and 0xF7,
- * which are reserved for system exclusive
- * @param data1     for 2 and 3-byte events: first data byte, 0..127
- * @param data2     for 3-byte events: second data byte, 0..127
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_short_midi_event(javacall_handle handle,
                                                 long type, long data1, long data2) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1764,20 +1323,6 @@ javacall_result javacall_media_short_midi_event(javacall_handle handle,
     return ret;
 }
 
-/**
- * Sends a long MIDI event to the device, typically a system exclusive message.
- *
- * @param handle    Handle to the library
- * @param data      array of the bytes to send.
- *                  This memory buffer will be freed after this function returned.
- *                  So, you should copy this data to the other internal memory buffer
- *                  if this function needs data after return.
- * @param offset    start offset in data array
- * @param length    number of bytes to be sent
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_long_midi_event(javacall_handle handle,
                                                const char* data,
                                                long offset,
@@ -1793,18 +1338,38 @@ javacall_result javacall_media_long_midi_event(javacall_handle handle,
     return ret;
 }
 
+/* Tone Control functions */
+/*****************************************************************************/
+
+javacall_result javacall_media_tone_alloc_buffer(javacall_handle handle, int length, void** ptr)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_TONE_ITF(pItf, tone_alloc_buffer)) {
+        ret = pItf->vptrTone->tone_alloc_buffer(pPlayer->mediaHandle, length, ptr);
+    }
+
+    return ret;
+}
+
+javacall_result javacall_media_tone_sequence_written(javacall_handle handle)
+{
+    javacall_result ret = JAVACALL_FAIL;
+    javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
+    media_interface* pItf = pPlayer->mediaItfPtr;
+
+    if (QUERY_TONE_ITF(pItf, tone_sequence_written)) {
+        ret = pItf->vptrTone->tone_sequence_written(pPlayer->mediaHandle);
+    }
+
+    return ret;
+}
+
 /* Record Control functions */
 /*****************************************************************************/
 
-/**
- * Is this recording transaction is handled by native layer or Java layer?
- *
- * @param handle    Handle to the library
- * @param locator   URL locator string for recording data (ex: file:///root/test.wav)
- *
- * @retval JAVACALL_OK      This recording transaction will be handled by native layer
- * @retval JAVACALL_FAIL    This recording transaction should be handled by Java layer
- */
 javacall_result
 javacall_media_recording_handled_by_native(javacall_handle handle,
                                                            const javacall_utf16* locator,
@@ -1822,18 +1387,6 @@ javacall_media_recording_handled_by_native(javacall_handle handle,
     return ret;
 }
 
-/**
- * Specify the maximum size of the recording including any headers.
- * If a size of -1 is passed then the record size limit should be removed.
- *
- * @param handle    Handle to the library
- * @param size      The maximum size bytes of the recording requested as input parameter.
- *                  The supported maximum size bytes of the recording which is less than or
- *                  equal to the requested size as output parameter.
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_set_recordsize_limit(javacall_handle handle,
                                                     /*INOUT*/ long* size) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1847,14 +1400,6 @@ javacall_result javacall_media_set_recordsize_limit(javacall_handle handle,
     return ret;
 }
 
-/**
- * Starts the recording. records all the data of the player ( video / audio )
- *
- * @param handle  Handle to the library
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_start_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1868,18 +1413,6 @@ javacall_result javacall_media_start_recording(javacall_handle handle) {
     return ret;
 }
 
-/**
- * Pause the recording. this should enable a future call
- * to javacall_media_start_recording. Another call to
- * javacall_media_start_recording after pause has been
- * called will result in recording the new data
- * and concatenating it to the previously recorded data.
- *
- * @param handle  Handle to the library
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_pause_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1892,14 +1425,6 @@ javacall_result javacall_media_pause_recording(javacall_handle handle) {
     return ret;
 }
 
-/**
- * Stop the recording.
- *
- * @param handle  Handle to the library
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_stop_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1912,20 +1437,6 @@ javacall_result javacall_media_stop_recording(javacall_handle handle) {
     return ret;
 }
 
-/**
- * The recording that has been done so far should be discarded. (deleted)
- * Recording will be paused before this method is called.
- * If javacall_media_start_recording is called after this method is called,
- * recording should resume. Calling reset after javacall_media_finish_recording
- * will have no effect on the current recording. If the Player that
- * is associated with this RecordControl is closed, javacall_media_reset_recording
- * will be called implicitly.
- *
- * @param handle  Handle to the library
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_reset_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1938,17 +1449,6 @@ javacall_result javacall_media_reset_recording(javacall_handle handle) {
     return ret;
 }
 
-/**
- * The recording should be completed;
- * this may involve updating the header,flushing buffers and closing
- * the temporary file if it is used by the implementation.
- * javacall_media_pause_recording will be called before this method is called.
- *
- * @param handle  Handle to the library
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_commit_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -1961,17 +1461,6 @@ javacall_result javacall_media_commit_recording(javacall_handle handle) {
     return ret;
 }
 
-/**
- * Get how much data was returned.
- * This function can be called after a successful call to
- * javacall_media_finish_recording.
- *
- * @param handle    Handle to the library
- * @param size      How much data was recorded
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_get_recorded_data_size(javacall_handle handle,
                                                       /*OUT*/ long* size) {
     javacall_result ret = JAVACALL_FAIL;
@@ -1985,20 +1474,6 @@ javacall_result javacall_media_get_recorded_data_size(javacall_handle handle,
     return ret;
 }
 
-/**
- * Gets the recorded data.
- * This function can be called after a successful call to
- * javacall_media_finish_recording.
- * It receives the data recorded from offset till the size.
- *
- * @param handle    Handle to the library
- * @param buffer    Buffer will contains the recorded data
- * @param offset    An offset to the start of the required recorded data
- * @param size      How much data will be copied to buffer
- *
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
 javacall_result javacall_media_get_recorded_data(javacall_handle handle,
                                                  /*OUT*/ char* buffer,
                                                  long offset, long size) {
@@ -2014,11 +1489,6 @@ javacall_result javacall_media_get_recorded_data(javacall_handle handle,
     return ret;
 }
 
-/**
- * Get the current recording data content type mime string length
- *
- * @return  If success return length of string else return 0
- */
 javacall_result javacall_media_get_record_content_type_length(javacall_handle handle,
                                                               int* length) {
     javacall_utf16 contentType[] = {'a','u','d','i','o','/','x','-','w','a','v'};
@@ -2027,16 +1497,6 @@ javacall_result javacall_media_get_record_content_type_length(javacall_handle ha
     return JAVACALL_OK;
 }
 
-/**
- * Get the current recording data content type mime string length
- * For example : 'audio/x-wav' for audio recording
- *
- * @param handle                Handle of native player
- * @param contentTypeBuf        Buffer to return content type Unicode string
- * @param contentTypeBufLength  Length of contentTypeBuf buffer (in Unicode metrics)
- * @param actualLength          Length of content type string stored in contentTypeBuf
- * @return                      
- */
 javacall_result javacall_media_get_record_content_type(javacall_handle handle, 
                                            /*OUT*/ javacall_utf16* contentTypeBuf,
                                            /*INOUT*/ int* length) {
@@ -2046,14 +1506,6 @@ javacall_result javacall_media_get_record_content_type(javacall_handle handle,
     return JAVACALL_OK;
 }
 
-/**
- * Close the recording. Delete all resources related with this recording.
- *
- * @param handle    Handle to the library
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
 javacall_result javacall_media_close_recording(javacall_handle handle) {
     javacall_result ret = JAVACALL_FAIL;
     javacall_impl_player* pPlayer = (javacall_impl_player*)handle;
@@ -2254,8 +1706,8 @@ javacall_result javacall_media_get_pitch(javacall_handle handle,
     return ret;
 }
 
-
 /* MIDI Bank Query functions *******************************************/
+
 javacall_result javacall_media_is_midibank_query_supported(javacall_handle handle, 
                                                            /*OUT*/ long* supported)
 {
@@ -2411,33 +1863,9 @@ javacall_result javacall_media_skip_frames(javacall_handle handle, /*INOUT*/ lon
 
 
 #define JFIF_HEADER_MAXIMUM_LENGTH 1024
-/**
- * Encodes given raw RGB888 image to specified format.
- * 
- * @param rgb888        [IN] soure raw image to be encoded
- * @param width         [IN] source image width
- * @param height        [IN] source image height
- * @param encode        [IN]destination format
- * @param quality       [IN]quality of encoded image (for format
- *                      with losses)
- * @param result_buffer [OUT]a pointer where result buffer will
- *                      be stored
- * @param result_buffer_len [OUT] a pointer for result buffer
- *                          size
- * @param context       [OUT] a context saved during
- *                      asynchronous operation
- * 
- * @return  JAVACALL_OK  in case of success,
- *          JAVACALL_OUT_OF_MEMORY if there is no memory for
- *          destination buffer
- *          JAVACALL_FAIL if encoder failed
- *          JAVACALL_WOULD_BLOCK if operation requires time to
- *          complete, an application should call
- *          <tt>javacall_media_encode_finish</tt> to get result
- */
 javacall_result javacall_media_encode_start(javacall_uint8* rgb888, 
-                                      javacall_uint8 width, 
-                                      javacall_uint8 height,
+                                      javacall_uint16 width, 
+                                      javacall_uint16 height,
                                       javacall_encoder_type encode,
                                       javacall_uint8 quality,
                                       javacall_uint8** result_buffer,
@@ -2468,64 +1896,16 @@ javacall_result javacall_media_encode_start(javacall_uint8* rgb888,
 }
 #undef JFIF_HEADER_MAXIMUM_LENGTH
 
-/**
- * Finish encode procedure for given raw RGB888 image.
- * 
- * @param result_buffer [OUT]a pointer where result buffer will
- *                      be stored
- * @param result_buffer_len [OUT] a pointer for result buffer
- *                          size
- * @param context       [OUT] a context saved during
- *                      asynchronous operation
- * 
- * @return  JAVACALL_OK  in case of success,
- *          JAVACALL_OUT_OF_MEMORY if there is no memory for
- *          destination buffer
- *          JAVACALL_FAIL if encoder failed
- *          JAVACALL_WOULD_BLOCK if operation requires time to
- *          complete, an application should call
- *          <tt>javacall_media_encode_finish</tt> to get result
- */
 javacall_result javacall_media_encode_finish(javacall_handle context,
                                              javacall_uint8** result_buffer, javacall_uint32* result_buffer_len) {
     // should never be called
     return JAVACALL_FAIL;
 }
 
-/**
- * Release a data was acuired by <tt>javacall_media_encode</tt>
- * 
- * @param result_buffer     a pointer to a buffer need to be
- *                          released
- * @param result_buffer_len the buffer length
- */
 void javacall_media_release_data(javacall_uint8* result_buffer, javacall_uint32 result_buffer_len) {
     javacall_free(result_buffer);
 }
 
-/**
- * Get current system audio volume level.
- * Audio volume range have to be in 0 to 100 inclusive. 0 means that audio is
- * muted.
- *
- * @note Player's volume level will be multiplied by the system volume 
- *       (divided by 100) before the javacall_media_set_volume() method will be 
- *       called by the Java layer. To block this calculation 
- *       the javacall_media_get_system_volume() method must return 
- *       JAVACALL_NO_DATA_AVAILABLE.
- *
- * @note If the device have a system mute/unmute capability 
- *       the Javacall layer is responsible for saving/restoring the current 
- *       system volume level when the audio is muted/unmuted.
- * 
- * @note This method must return JAVACALL_NO_DATA_AVAILABLE when the 
- *       System volume feature is not implemented.
- *
- * @param volume        Volume value
- *
- * @retval JAVACALL_OK                Success
- * @retval JAVACALL_NO_DATA_AVAILABLE System volume is not available
- */
 javacall_result javacall_media_get_system_volume(/*OUT*/ javacall_int32 *volume) {
     return JAVACALL_NO_DATA_AVAILABLE;
 }
