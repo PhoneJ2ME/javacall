@@ -91,7 +91,7 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
 {
     xfer_buffer* xbuf = NULL;
     rtp_player* p = (rtp_player*)param;
-    long mt;
+    javacall_int32 mt;
 
     EnterCriticalSection( &(p->cs) );
     {
@@ -99,8 +99,10 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
         sprintf( str, "   %i %i %i %i >> \n", size, p->queue_size, p->playing, p->buffering );
         RTP_DBG( str );
 
+        /*
         javanotify_on_media_notification(JAVACALL_EVENT_MEDIA_NEED_MORE_MEDIA_DATA,
             p->appId, p->playerId, JAVACALL_OK, NULL);
+        */
 
         if( NULL != p->queue_head && p->playing && !p->buffering )
         {
@@ -121,7 +123,7 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
                 p->samplesPlayed += size / p->channels;
             }
 
-            mt = p->samplesPlayed * 1000 / p->rate;
+            mt = (javacall_int32)( p->samplesPlayed * 1000 / p->rate );
         }
     }
     LeaveCriticalSection( &(p->cs) );
@@ -165,6 +167,8 @@ size_t rtp_pcm_callback( void* buf, size_t size, void* param )
 
     return size;
 }
+
+#if( 0 )
 
 static javacall_result rtp_create(int appId, 
                                   int playerId,
@@ -251,23 +255,10 @@ static javacall_result rtp_get_player_controls(javacall_handle handle,
     return JAVACALL_OK;
 }
 
-static javacall_result rtp_acquire_device(javacall_handle handle)
+static javacall_result rtp_deallocate(javacall_handle handle)
 {
     rtp_player* p = (rtp_player*)handle;
-    RTP_DBG( "*** acquire device ***\n" );
-
-    p->hpcm = pcm_out_open_channel( p->bits, p->channels, p->rate, 
-                                    XFER_BUFFER_SIZE, rtp_pcm_callback, p );
-
-    p->acquired = TRUE;
-
-    return JAVACALL_OK;
-}
-
-static javacall_result rtp_release_device(javacall_handle handle)
-{
-    rtp_player* p = (rtp_player*)handle;
-    RTP_DBG( "*** release device ***\n" );
+    RTP_DBG( "*** deallocate ***\n" );
 
     if( NULL != p->hpcm )
     {
@@ -315,6 +306,12 @@ static javacall_result rtp_prefetch(javacall_handle handle)
     rtp_player* p = (rtp_player*)handle;
     RTP_DBG( "*** prefetch ***\n" );
     p->prefetched = TRUE;
+
+    pcm_out_open_channel( &(p->hpcm), p->bits, p->channels, p->rate, 
+                          XFER_BUFFER_SIZE, rtp_pcm_callback, p );
+
+    p->acquired = TRUE;
+
     return JAVACALL_OK;
 }
 
@@ -429,13 +426,6 @@ static javacall_result rtp_do_buffering(javacall_handle handle,
     return JAVACALL_OK;
 }
 
-static javacall_result rtp_clear_buffer(javacall_handle handle)
-{
-    rtp_player* p = (rtp_player*)handle;
-    RTP_DBG( "*** clear buffer ***\n" );
-    return JAVACALL_OK;
-}
-
 static javacall_result rtp_start(javacall_handle handle)
 {
     rtp_player* p = (rtp_player*)handle;
@@ -452,43 +442,29 @@ static javacall_result rtp_stop(javacall_handle handle)
     return JAVACALL_OK;
 }
 
-static javacall_result rtp_pause(javacall_handle handle)
-{
-    rtp_player* p = (rtp_player*)handle;
-    RTP_DBG( "*** pause ***\n" );
-    p->playing = FALSE;
-    return JAVACALL_OK;
-}
-
-static javacall_result rtp_resume(javacall_handle handle)
-{
-    rtp_player* p = (rtp_player*)handle;
-    RTP_DBG( "*** resume ***\n" );
-    p->playing = TRUE;
-    return JAVACALL_OK;
-}
+#endif // ( 0 )
 
 static javacall_result rtp_get_time(javacall_handle handle, 
-                                    long* ms)
+                                    javacall_int32* ms)
 {
     rtp_player* p = (rtp_player*)handle;
 
     EnterCriticalSection( &(p->cs) );
-    *ms = p->samplesPlayed * 1000 / p->rate;
+    *ms = (javacall_int32)( p->samplesPlayed * 1000 / p->rate );
     LeaveCriticalSection( &(p->cs) );
 
     return JAVACALL_OK;
 }
 
 static javacall_result rtp_set_time(javacall_handle handle, 
-                                    long* ms)
+                                    javacall_int32 ms)
 {
     rtp_player* p = (rtp_player*)handle;
     return JAVACALL_FAIL;
 }
 
 static javacall_result rtp_get_duration(javacall_handle handle, 
-                                        long* ms)
+                                        javacall_int32* ms)
 {
     rtp_player* p = (rtp_player*)handle;
     return JAVACALL_NO_DATA_AVAILABLE;
@@ -550,27 +526,25 @@ static javacall_result rtp_set_mute(javacall_handle handle,
 
 static media_basic_interface _rtp_basic_itf =
 {
-    rtp_create,
-    rtp_get_format,
-    rtp_get_player_controls,
-    rtp_close,
-    rtp_destroy,
-    rtp_acquire_device,
-    rtp_release_device,
-    rtp_realize,
-    rtp_prefetch,
-    rtp_start,
-    rtp_stop,
-    rtp_pause,
-    rtp_resume,
-    rtp_get_java_buffer_size,
-    rtp_set_whole_content_size,
-    rtp_get_buffer_address,
-    rtp_do_buffering,
-    rtp_clear_buffer,
+    NULL, //rtp_create,
+    NULL, //rtp_destroy,
+    NULL, //rtp_get_format,
+    NULL, //rtp_get_player_controls,
+
+    NULL, //rtp_prefetch,
+    NULL, //rtp_run,
+    NULL, //rtp_pause,
+    NULL, //rtp_deallocate,
+
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+
     rtp_get_time,
     rtp_set_time,
     rtp_get_duration,
+
     rtp_switch_to_foreground,
     rtp_switch_to_background
 };
@@ -586,6 +560,7 @@ media_interface g_rtp_itf =
 {
     &_rtp_basic_itf,
     &_rtp_volume_itf,
+    NULL,
     NULL,
     NULL,
     NULL,

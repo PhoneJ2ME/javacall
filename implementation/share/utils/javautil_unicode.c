@@ -101,7 +101,7 @@ javacall_result javautil_unicode_utf16_ulength(javacall_const_utf16_string str,
     for(ptr = str; *ptr != 0; ptr++) {
     }
 
-    *length = ptr-str;
+    *length = (javacall_int32)(ptr-str);
     return JAVACALL_OK;
 }
 
@@ -284,48 +284,6 @@ javacall_result javautil_unicode_utf16_to_utf8(const javacall_utf16* pUtf16,
     }
 
     return JAVACALL_OK;
-}
-
-/**
- * Calculates maximum number of UTF8 bytes in pUtf8 buffer that can be converted into UTF16 buffer of length *utf16Len.
- * Returns the number of consumed UTF8 bytes in *utf8Len and the number of required UTF16 chars in *utf16Len.
- *
- * if pUtf8 string contains illegal UTF8 codes the function returns JAVACALL_INVALID_ARGUMENT
- * otherwise JAVACALL_OK
- */
-javacall_result javautil_unicode_get_max_lengths(const unsigned char * pUtf8, javacall_int32 * utf8Len, javacall_int32 * utf16Len)
-{
-    javacall_int32 utf8idx = 0, utf16idx = 0;
-    unsigned char byte;
-    int utf8count, utf16count;
-    while( utf8idx < *utf8Len ) {
-        byte = *pUtf8++;
-        if( (byte & 0x80) == 0 ) utf8count = 1;
-        else if( (byte & 0xE0) == 0xC0 ) utf8count = 2;
-        else if( (byte & 0xF0) == 0xE0 ) utf8count = 3;
-        else if( (byte & 0xF8) == 0xF0 ) utf8count = 4;
-        utf16count = (utf8count + 1) >> 1;
-        if( utf8idx + utf8count > *utf8Len || utf16idx + utf16count > *utf16Len )
-            break;
-
-        utf8idx += utf8count;
-        utf16idx += utf16count;
-        // check highest bits
-        if( utf8count > 1 ){
-            --utf8count;
-            while( --utf8count ){
-                byte = *pUtf8++;
-                if( (byte & 0x80) != 0x80 )
-                    return( JAVACALL_INVALID_ARGUMENT );
-            }
-            byte = *pUtf8++;
-            if( (byte & 0x80) != 0 )
-                return( JAVACALL_INVALID_ARGUMENT );
-        }
-    }
-    *utf8Len = utf8idx;
-    *utf16Len = utf16idx;
-    return( JAVACALL_OK );
 }
 
 /**
@@ -1164,7 +1122,7 @@ javacall_result javautil_unicode_substring(javacall_const_utf16_string src,
                 }
 
                 if (temp == begin) {
-                    startUnit = ptr - src;
+                    startUnit = (javacall_int32)(ptr - src);
                 }
 
                 if (temp == end) {
@@ -1175,7 +1133,7 @@ javacall_result javautil_unicode_substring(javacall_const_utf16_string src,
         }
         else{
             if (temp == begin){
-                startUnit = ptr - src - 1;
+                startUnit = (javacall_int32)(ptr - src - 1);
             }
 
             if (temp == end){
@@ -1188,7 +1146,7 @@ javacall_result javautil_unicode_substring(javacall_const_utf16_string src,
         return JAVACALL_INVALID_ARGUMENT;
     }
     
-    dstLen = ptr - src - startUnit;
+    dstLen = (javacall_int32)(ptr - src - startUnit);
     if (destLen < dstLen) {
         return JAVACALL_OUT_OF_MEMORY;
     }
