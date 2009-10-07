@@ -417,15 +417,381 @@ javacall_result javacall_media_get_configuration(
  */
 
 /**
- * This function is called to get all the necessary return values from 
+ * Create the native player with the native data flow management.
+ * 
+ * If this procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_CREATE_FINISHED will be posted on completion.
+ *
+ * @param app_id       Unique application ID.
+ * @param player_id    Unique player object ID.
+ * @param locator_len  Locator string length.
+ * @param locator      Locator unicode string.
+ * @param handle       Out - handle to the native player.
+ *
+ * @retval JAVACALL_OK                    Procedure succeded synchronously.
+ * @retval JAVACALL_CONNECTION_NOT_FOUND  Could not connect to the URL.
+ * @retval JAVACALL_IO_ERROR              IO error occurred while connecting
+ *                                        the URL or getting data.
+ * @retval JAVACALL_INVALID_ARGUMENT      Invalid URL or other parameter.
+ * @retval JAVACALL_NO_AUDIO_DEVICE       No audio device found and therefore
+ *                                        playback is impossible. JVM will
+ *                                        throw a MediaException. Please
+ *                                        return this code only in case you
+ *                                        want to reject playback, i.e. when
+ *                                        the content is audio only. If some
+ *                                        kind of playback is still possible
+ *                                        (e.g. mute video), please return
+ *                                        JAVACALL_OK instead.
+ * @retval JAVACALL_FAIL                  General failure or the following
+ *                                        situation. Porting Layer may decide
+ *                                        to reject the creation for some
+ *                                        reason. For example, if you do not
+ *                                        want media from some pre-defined
+ *                                        "bad" Internet site.
+ * @retval JAVACALL_WOULD_BLOCK           Procedure will continue in
+ *                                        background, completion will be flagged with an event
+ *                                        JAVACALL_EVENT_MEDIA_CREATE_FINISHED.
+ */
+javacall_result javacall_media_create_managed_player(
+    javacall_int32 app_id,
+    javacall_int32 player_id,
+    javacall_int32 locator_len,
+    javacall_const_utf16_string locator,
+    /*OUT*/ javacall_handle *handle);
+
+/**
+ * Create the native player which data flow is managed by Java.
+ * 
+ * If this procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_CREATE_FINISHED will be posted on completion.
+ *
+ * @param app_id            Unique application ID.
+ * @param player_id         Unique player object ID.
+ * @param locator_len       Locator string length.
+ * @param locator           Locator unicode string.
+ * @param mime_len          String length of media MIME type, 0 if unknown.
+ * @param mime              MIME type unicode string, ignored if mime_len is
+                            0.
+ * @param stream_len_known  JAVACALL_TRUE if stream length is known and
+ *                          specified in stream_len, JAVACALL_FALSE otherwise.
+ * @param stream_len        Stream length, in bytes, ignored if
+ *                          strean_len_known is JAVACALL_FALSE.
+ * @param handle            Out - handle to the native player.
+ *
+ * @retval JAVACALL_OK                    Procedure succeded synchronously.
+ * @retval JAVACALL_CONNECTION_NOT_FOUND  Could not connect to the URL.
+ * @retval JAVACALL_IO_ERROR              IO error occurred while connecting
+ *                                        the URL or getting data.
+ * @retval JAVACALL_INVALID_ARGUMENT      Invalid URL or other parameter.
+ * @retval JAVACALL_NO_AUDIO_DEVICE       No audio device found and therefore
+ *                                        playback is impossible. JVM will
+ *                                        throw a MediaException. Please
+ *                                        return this code only in case you
+ *                                        want to reject playback, i.e. when
+ *                                        the content is audio only. If some
+ *                                        kind of playback is still possible
+ *                                        (e.g. mute video), please return
+ *                                        JAVACALL_OK instead.
+ * @retval JAVACALL_FAIL                  General failure or the following
+ *                                        situation. Porting Layer may decide
+ *                                        to reject the creation for some
+ *                                        reason. For example, if you do not
+ *                                        want media from some pre-defined
+ *                                        "bad" Internet site.
+ * @retval JAVACALL_WOULD_BLOCK           Procedure will continue in
+ *                                        background, completion will be flagged with an event
+ *                                        JAVACALL_EVENT_MEDIA_CREATE_FINISHED.
+ */
+javacall_result javacall_media_create_unmanaged_player(
+    javacall_int32 app_id,
+    javacall_int32 player_id,
+    javacall_int32 locator_len,
+    javacall_const_utf16_string locator,
+    javacall_int32 mime_len,
+    javacall_const_utf16_string mime,
+    javacall_bool stream_len_known,
+    javacall_int64 stream_len,
+    /*OUT*/ javacall_handle *handle);
+
+/**
+ * Destroy the native player object and release all its resources.
+ * 
+ * Immediately following procedure call, handle to the native player becomes
+ * invalid and must not be further used, data processing must be aborted,
+ * possible pending data request event must be ignored.
+ *
+ * If this procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_DESTROY_FINISHED will be posted on completion.
+ *
+ * After an event JAVACALL_EVENT_MEDIA_DESTROY_FINISHED has been posted, the
+ * native player will not post any other events, including data requests.
+ *
+ * @param handle  Handle to the native player.
+ *
+ * @retval JAVACALL_OK          Procedure succeded synchronously.
+ * @retval JAVACALL_WOULD_BLOCK Procedure will continue in
+ *                              background, completion will be flagged with an event
+ *                              JAVACALL_EVENT_MEDIA_DESTROY_FINISHED.
+ */
+javacall_result javacall_media_destroy(javacall_handle handle);
+
+/**
+ * Get the native player's format type of the media content.
+ *
+ * @param handle  Handle to the native player.
+ * @param format  Out - format type.
+ *
+ * @retval JAVACALL_OK    Success.
+ * @retval JAVACALL_FAIL  Failure.
+ */
+javacall_result javacall_media_get_format(
+    javacall_handle handle,
+    /*OUT*/ javacall_media_format_type *format);
+
+/**
+ * Return bitmask of Media Controls supported by the native player.
+ *
+ * Only Media Controls supported by the native layer should be indicated.
+ *
+ * @param handle    Handle to the native player.
+ * @param controls  Out - bitmasks for Media Control implemented in native
+ *                  layer.
+ *
+ * @retval JAVACALL_OK    Success.
+ * @retval JAVACALL_FAIL  Failure.
+ */
+javacall_result javacall_media_get_player_controls(
+    javacall_handle handle,
+    /*OUT*/ javacall_int32 *controls);
+
+/**
+ * Move the native player from STOPPED to PAUSED state.
+ *
+ * In the paused state, the native player is ready to move to the running
+ * state as soon as possible, holding scarce or exclusive resources if
+ * necessary.
+ *
+ * If this procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_PREFETCH_FINISHED will be posted on completion.
+ *
+ * The player may need to process stream data before it completes the
+ * procedure.
+ * 
+ * @param handle  Handle to the native player.
+ * 
+ * @retval JAVACALL_OK          Procedure succeded synchronously.
+ * @retval JAVACALL_FAIL        Procedure failed, player cannot be paused, Java will
+ *                              throw MediaException.
+ * @retval JAVACALL_WOULD_BLOCK Procedure will continue in background, completion
+ *                              will be flagged with an event
+ *                              JAVACALL_EVENT_MEDIA_PREFETCH_FINISHED.
+ */
+javacall_result javacall_media_prefetch(javacall_handle handle);
+
+/**
+ * Move the native player from PAUSED to RUNNING state.
+ *
+ * If this procedure is asynchronous, an event JAVACALL_EVENT_MEDIA_RUN_FINISHED
+ * will be posted on completion.
+ *
+ * The player may need to process stream data before it completes the
+ * procedure.
+ * 
+ * @param handle  Handle to the native player.
+ * 
+ * @retval JAVACALL_OK          Procedure succeded synchronously.
+ * @retval JAVACALL_FAIL        Procedure failed, player cannot be started, Java
+ *                              will throw MediaException.
+ * @retval JAVACALL_WOULD_BLOCK Procedure will continue in background, completion
+ *                              will be flagged with an event
+ *                              JAVACALL_EVENT_MEDIA_RUN_FINISHED.
+ */
+javacall_result javacall_media_run(javacall_handle handle);
+
+/**
+ * Move the native player from RUNNING to PAUSED state.
+ *
+ * In the paused state, the native player is ready to move to the running
+ * state as soon as possible, holding scarce or exclusive resources if
+ * necessary.
+ *
+ * If this procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_PAUSE_FINISHED will be posted on completion.
+ *
+ * The player may need to process stream data before it completes the
+ * procedure.
+ * 
+ * @param handle  Handle to the native player.
+ * 
+ * @retval JAVACALL_OK          Procedure succeded synchronously.
+ * @retval JAVACALL_WOULD_BLOCK Procedure will continue in background, completion
+ *                              will be flagged with an event
+ *                              JAVACALL_EVENT_MEDIA_PAUSE_FINISHED.
+ */
+javacall_result javacall_media_pause(javacall_handle handle);
+
+/**
+ * Move the native player from PAUSED to STOPPED state.
+ *
+ * In the stopped state, the native player does not hold any scarce or
+ * exclusive resources.
+ *
+ * If this procedure is asynchronous, an event JAVACALL_EVENT_MEDIA_DEALLOCATE_FINISHED
+ * will be posted on completion.
+ *
+ * The player may need to process stream data before it completes the
+ * procedure.
+ * 
+ * @param handle  Handle to the native player.
+ * 
+ * @retval JAVACALL_OK           Procedure succeded synchronously.
+ * @retval JAVACALL_WOULD_BLOCK  Procedure will continue in background, 
+ *                               completion will be flagged with an event
+ *                               JAVACALL_EVENT_MEDIA_DEALLOCATE_FINISHED.
+ */
+javacall_result javacall_media_deallocate(javacall_handle handle);
+
+/**
+ * Notify the native player about stream length. This function is called if
+ * stream length is known.
+ *
+ * Must not be called for players with native data flow management.
+ *
+ * @param handle            Handle to the native player.
+ * @param stream_len_known  JAVACALL_TRUE if stream length is known and
+ *                          specified in stream_len, JAVACALL_FALSE otherwise.
+ * @param stream_len        Stream length, in bytes, ignored if
+ *                          strean_len_known is JAVACALL_FALSE.
+ *
+ * @retval JAVACALL_OK  Always succeeds.
+ */
+javacall_result javacall_media_stream_length(
+    javacall_handle handle,
+    javacall_bool stream_len_known,
+    javacall_int64 stream_len);
+
+/**
+ * Get the native player's data for the JAVACALL_EVENT_MEDIA_DATA_REQUEST
+ * event.
+ *
+ * This procedure must always be followed by javacall_media_data_ready call or
+ * implementation may block waiting for data.
+ *
+ * Must not be called for players with native data flow management.
+ *
+ * @param handle  Handle to the native player.
+ * @param offset  Out - stream offset to read from, in bytes.
+ * @param length  Out - buffer length. Maximum data length to write to buffer,
+ *                in bytes.
+ *
+ * @retval JAVACALL_OK  Always succeeds.
+ */
+javacall_result javacall_media_get_data_request(
+    javacall_handle handle,
+    /*OUT*/ javacall_int64 *offset,
+    /*OUT*/ javacall_int32 *length);
+
+/**
+ * Tell the native player that requested data is ready to be written.
+ *
+ * This procedure must always be immediately followed by
+ * javacall_media_data_written call.
+ *
+ * Must not be called for players with native data flow management.
+ *
+ * @param handle  Handle to the native player.
+ * @param length  Length of data, in bytes.
+ * @param data    In - pointer to the return value, ignored if length equals
+ *                to 0.
+ *                Out - buffer address to write data to, unchanged if
+ *                procedure call failed and data must not be written.
+ *
+ * @retval JAVACALL_OK    Data is accepted to be written, *data points to the
+ *                        memory block to write data to.
+ * @retval JAVACALL_FAIL  Data is not accepted for writing and must be
+ *                        discarded, *data is unchanged.
+ *                        javacall_media_data_written still must be called.
+ */
+javacall_result javacall_media_data_ready(
+    javacall_handle handle,
+    javacall_int32 length,
+    /*OUT*/ void **data);
+
+/**
+ * Tell the native player that requested data has been written.
+ *
+ * This procedure must always be called immediately after
+ * javacall_media_data_ready call.
+ *
+ * Must not be called for players with native data flow management.
+ *
+ * @param handle       Handle to the native player.
+ * @param new_request  Out - additional data requested.
+ *
+ * @retval JAVACALL_OK  Always succeeds.
+ */
+javacall_result javacall_media_data_written(
+    javacall_handle handle,
+    /*OUT*/ javacall_bool *new_request);
+
+/**
+ * Get the native player's current media time.
+ *
+ * @param handle  Handle to the native player.
+ * @param time    Out - media time in milliseconds or -1 if time is unknown.
+ *
+ * @retval JAVACALL_OK  Always succeeds.
+ */
+javacall_result javacall_media_get_media_time(
+    javacall_handle handle,
+    /*OUT*/ javacall_int32 *time);
+
+/**
+ * Seek the native player to the specified media time.
+ *
+ * This procedure is asynchronous, an event
+ * JAVACALL_EVENT_MEDIA_SET_MEDIA_TIME_FINISHED will be posted on completion.
+ * Actual media time set will be returned with event.
+ *
+ * The player may need to process stream data before it completes the
+ * procedure.
+ *
+ * @param handle  Handle to the native player.
+ * @param time    Media time in milliseconds.
+ *
+ * @retval JAVACALL_OK          Procedure succeeded synchronously
+ * @retval JAVACALL_FAIL        Procedure failed, the media time cannot be set, Java
+ *                              will throw MediaException.
+ * @retval JAVACALL_WOULD_BLOCK Procedure will continue in background, completion
+ *                              will be flagged with an event
+ *                              JAVACALL_EVENT_MEDIA_SET_MEDIA_TIME_FINISHED.
+ */
+javacall_result javacall_media_set_media_time(
+    javacall_handle handle,
+    javacall_int32 time);
+
+/**
+ * Get the duration of the media associated with the native player.
+ *
+ * @param handle    Handle to the native player.
+ * @param duration  Out - media duration in milliseconds.
+ *
+ * @retval JAVACALL_OK  Always succeeds.
+ */
+javacall_result javacall_media_get_duration(
+    javacall_handle handle,
+    /*OUT*/ javacall_int32 *duration);
+
+/**
+ * This function is called to get all the necessary return values from
  * the JavaCall Media functions that can run in asynchronous mode.
  * This function is called every time the following situation occurs.
  * A JSR-135 JavaCall API function returned JAVACALL_WOULD_BLOCK and continued
- * its 
+ * its
  * execution in asynchronous mode. Then it finished the execution and send the
  * corresponding event to inform Java layer about it. Such events are described
  * in the description of the enum javacall_media_notification_type after the
- * event 
+ * event
  * JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER. After the event Java
  * layer calls javacall_media_get_event_data() to get the return values.
  *
@@ -450,341 +816,12 @@ javacall_result javacall_media_get_configuration(
  * @see javacall_media_notification_type
  * @see JAVACALL_EVENT_MEDIA_JAVA_EVENTS_MARKER
  */
-javacall_result javacall_media_get_event_data(javacall_handle handle, 
-                    int eventType, void *pResult, int numArgs, void *args[]);
-
-/**
- * Java MMAPI call this function to create native media handler.
- * This function is called at the first time to initialize native library.
- * You can do your own initialization job from this function.
- * 
- * @param appID         Unique application ID for this playing
- * @param playerId      Unique player object ID for this playing
- * @param uri           URI unicode string to media data.
- * @param uriLength     String length of URI
- * @param handle        Handle of native library.
- *
- * @retval JAVACALL_OK                      Success
- * @retval JAVACALL_CONNECTION_NOT_FOUND    Could not connect to the URL
- * @retval JAVACALL_IO_ERROR                IO error occurred while connecting
- *                                          the URL or getting data 
- * @retval JAVACALL_INVALID_ARGUMENT        Invalid URL or other parameter
- * @retval JAVACALL_NO_AUDIO_DEVICE     No audio device found and therefore
- *                                      playback is impossible. JVM will throw
- *                                      a MediaException. Please return this
- *                                      code only in case you want to
- *                                      reject playback, i.e. when the content
- *                                      is audio only. If some kind of playback
- *                                      is still possible (e.g. mute video),
- *                                      please return JAVACALL_OK instead
- * @retval JAVACALL_FAIL                    General failure or the following
- *                                          situation. Porting Layer may
- *                                          decide to reject the creation for
- *                                          some reason. For example, if you
- *                                          do not want media from some
- *                                          pre-defined "bad" Internet site.
- *                                          
- */
-javacall_result javacall_media_create(int appID,
-                                      int playerID,
-                                      javacall_const_utf16_string uri, 
-                                      long uriLength,
-                                      /*OUT*/ javacall_handle* handle);
-
-/**
- * Get the format type of media content
- *
- * @param handle    Handle to the library 
- * @param format    Format type
- * 
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
-javacall_result javacall_media_get_format(javacall_handle handle, 
-                              /*OUT*/ javacall_media_format_type* format);
-
-/**
- * Return bitmask of Media Controls supported by native player
- * 
- * Only Media Controls supported by native layer should be indicated
- *
- * @param handle    Handle to the library 
- * @param controls  bitmasks for Media Control implemented in native layer
- * 
- * @retval JAVACALL_OK          Success
- * @retval JAVACALL_FAIL        Fail
- */
-javacall_result javacall_media_get_player_controls(javacall_handle handle,
-                              /*OUT*/ int* controls);
-
-/**
- * Close native media player that created by creat or creat2 API call
- * After this call, you can't use any other function in this library
- * except for javacall_media_destroy
- * 
- * @param handle  Handle to the library.
- * 
- * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    Java VM will raise the media exception
- */
-javacall_result javacall_media_close(javacall_handle handle);
-
-/**
- * finally destroy native media player previously closed by
- * javacall_media_close. intended to be used by finalizer
- * 
- * @param handle  Handle to the library.
- * 
- * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    Java VM will raise the media exception
- */
-javacall_result javacall_media_destroy(javacall_handle handle);
-
-/**
- * Request to acquire device resources used to play media data.
- * You could implement this function to control device resource usage.
- * If there is no valid device resource to play media data, return JAVACALL_FAIL.
- * 
- * @param handle    Handle to the library
- * 
- * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    Java VM will raise the media exception
- */
-javacall_result javacall_media_acquire_device(javacall_handle handle);
-
-/**
- * Release device resource. 
- * Java MMAPI call this function to release limited device resources.
- * 
- * @param handle    Handle to the library
- * 
- * @retval JAVACALL_OK      Java VM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    Nothing happened now. Same as JAVACALL_OK.
- */
-javacall_result javacall_media_release_device(javacall_handle handle);
-
-/**
- * Ask to the native layer if it will handle media download from specific URL.
- * Is media download for specific URL (provided in javacall_media_create)
- * will be handled by native layer or Java layer?
- * If isHandled is JAVACALL_TRUE, Java do not call 
- * javacall_media_do_buffering function
- * In this case, native layer should handle all of data gathering by itself
- * 
- * @param handle    Handle to the library
- * @param isHandled JAVACALL_TRUE if native player will handle media download
- * 
- * @retval JAVACALL_OK      
- * @retval JAVACALL_FAIL    
- */
-javacall_result javacall_media_download_handled_by_device(javacall_handle handle,
-                                                  /*OUT*/ javacall_bool* isHandled);
-
-/**
- * This function returns desired size of Java Layer buffer for downloaded media content
- * It is possible if function returns different values for the same player in case of:
- *    - format of media data is unknown
- *    - format of media data is successfully discovered
- * Java Layer will call this function two times to create/update java Layer buffers:
- *    1) before downloading media content
- *    2) after 
- *
- * @param handle    Handle to the library
- * @param java_buffer_size  Desired size of java buffer
- * @param first_data_size  Size of the first chunk of media data, 
- *                          provided from Java to native
- * 
- * @retval JAVACALL_OK
- * @retval JAVACALL_FAIL
- * @retval JAVACALL_NOT_IMPLEMENTED
- */
-javacall_result javacall_media_get_java_buffer_size(javacall_handle handle,
-                                 /*OUT*/ long* java_buffer_size, 
-                                 /*OUT*/ long* first_chunk_size);
-
-/**
- * This function is called by Java Layer to notify javacall implementation about 
- * whole size of media content. This function is called in prefetch stage if 
- * whole size of media content is known only.
- *
- * @param handle    Handle to the library
- * @param whole_content_size  size of whole media content
- * 
- * @retval JAVACALL_OK
- * @retval JAVACALL_FAIL
- */
-javacall_result javacall_media_set_whole_content_size(javacall_handle handle,
-                                 long whole_content_size);
-
-/**
- * Get native buffer address to store media content
- * 
- * @param handle    Handle to the library
- * @param buffer    Native layer provides address of data buffer for media content. 
- *                  Java layer will store downloaded media data to the provided buffer.
- *                  The size of data stored in the buffer should be equal or divisible 
- *                  by minimum media data chunk size and less or equal to max_size
- * @param max_size  The maximum size of data can be stored in the buffer
- * 
- * @retval JAVACALL_OK
- * @retval JAVACALL_FAIL   
- */
-javacall_result javacall_media_get_buffer_address(javacall_handle handle, 
-                                 /*OUT*/ const void** buffer, 
-                                 /*OUT*/ long* max_size);
-
-/**
- * Java MMAPI call this function to send media data to this library.
- * This function can be called multiple times to send large media data.
- * Native library can implement buffering by using any method (file, heap, etc...)
- * Buffering always occurs sequentially, not randomly.
- * 
- * When there is no more data, the buffer is set to NULL and the length to -1.
- * OEM should care about this case.
- * 
- * @param handle    Handle to the library.
- * @param buffer    Media data buffer pointer. Can be NULL at end of buffering.
- * @param length    Length of media data. Can be -1 at end of buffering.
- *                  If success returns length of data processed.
- * @param need_more_data    returns JAVACALL_FALSE if no more data is required
- *                          at the moment, otherwise returns JAVACALL_TRUE
- * @param next_chunk_size   next expected buffering data size
- *                          must be divisible by this value
- * 
- * @retval JAVACALL_OK
- * @retval JAVACALL_FAIL   
- * @retval JAVACALL_INVALID_ARGUMENT
- */
-javacall_result javacall_media_do_buffering(javacall_handle handle, 
-                                 const void* buffer,
-                                 /*INOUT*/ long* length,
-                                 /*OUT*/ javacall_bool* need_more_data,
-                                 /*OUT*/ long* next_chunk_size);
-
-/**
- * MMAPI call this function to clear(delete) buffered media data
- * You have to clear any resources created from previous buffering
- * 
- * @param handle    Handle to the library
- * 
- * @retval JAVACALL_OK      Can clear buffer
- * @retval JAVACALL_FAIL    Can't clear buffer. JVM can't erase resources.
- */
-javacall_result javacall_media_clear_buffer(javacall_handle handle);
-
-/**
- * Realize native player.
- * This function will be called by Java Layer to start Realize native player.
- * 
- * @param handle        Handle to the library
- * @param mime          Mime type unicode string. 
- *                      NULL if unknown
- * @param mimeLength    String length of media MIME type.
- * 
- * @retval JAVACALL_OK                  Success
- * @retval JAVACALL_NO_AUDIO_DEVICE     No audio device found and therefore
- *                                      playback is impossible. JVM will throw
- *                                      a MediaException. Please return this
- *                                      code only in case you want to
- *                                      reject playback, i.e. when the content
- *                                      is audio only. If some kind of playback
- *                                      is still possible (e.g. mute video),
- *                                      please return JAVACALL_OK instead
- * @retval JAVACALL_FAIL                General failure
- */
-javacall_result javacall_media_realize(javacall_handle handle,
-                                      javacall_const_utf16_string mime,
-                                      long mimeLength);
-
-/**
- * Prefetch native player. 
- * This function will be called by Java Layer to Prefetch native player.
- * 
- * @param handle    Handle to the library
- * 
- * @retval JAVACALL_OK
- * @retval JAVACALL_FAIL   
- */
-javacall_result javacall_media_prefetch(javacall_handle handle);
-
-/**
- * Try to start media playing.<br>
- * If this API return JAVACALL_FAIL, MMAPI will raise the media exception.<br>
- * If this API return JAVACALL_OK, MMAPI will return from start method.
- * 
- * @param handle    Handle to the library
- * 
- * @retval JAVACALL_OK      JVM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    JVM will raise the media exception
- */
-javacall_result javacall_media_start(javacall_handle handle);
-
-/**
- * Stop media playing.
- * If this API return JAVACALL_FAIL, MMAPI will raise the media exception.<br>
- * If this API return JAVACALL_OK, MMAPI will return from stop method.
- * 
- * @param handle      Handle to the library
- * 
- * @retval JAVACALL_OK      JVM will proceed as if there is no problem
- * @retval JAVACALL_FAIL    JVM will raise the media exception
- */
-javacall_result javacall_media_stop(javacall_handle handle);
-
-/**
- * Pause media playing
- * 
- * @param handle      Handle to the library
- * 
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
-javacall_result javacall_media_pause(javacall_handle handle);
-
-/**
- * Resume media playing
- * 
- * @param handle      Handle to the library
- * 
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
-javacall_result javacall_media_resume(javacall_handle handle);
-
-/**
- * Get current media time (position) in ms unit
- * 
- * @param handle    Handle to the library
- * @param ms        current media time in ms
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
-javacall_result javacall_media_get_time(javacall_handle handle, /*OUT*/ long* ms );
-
-/**
- * Seek to specified time.
- * This function can be called during play status or stop status
- * 
- * @param handle    Handle to the library
- * @param ms        Seek position as ms time, return actual time in ms
- * 
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_FAIL    Fail
- */
-javacall_result javacall_media_set_time(javacall_handle handle, /*INOUT*/ long* ms);
- 
-/**
- * Get whole media time in ms.
- * This function can be called during play status or stop status.
- * 
- * @param handle    Handle to the library
- * @param ms        return time in ms
- *
- * @retval JAVACALL_OK      Success
- * @retval JAVACALL_NO_DATA_AVAILABLE
- */
-javacall_result javacall_media_get_duration(javacall_handle handle, /*OUT*/ long* ms);
+javacall_result javacall_media_get_event_data(
+    javacall_handle handle, 
+    javacall_int32 eventType,
+    void *pResult,
+    javacall_int32 numArgs,
+    void *args[]);
 
 /** @} */
 
@@ -915,6 +952,9 @@ javacall_result javacall_media_stop_tone(int appID);
  * @retval JAVACALL_FAIL    Fail. JVM will raise the media exception.
  */
 javacall_result javacall_media_play_dualtone(int appID, long noteA, long noteB, long duration, long volume);
+
+javacall_result javacall_media_tone_alloc_buffer(javacall_handle handle, int length, void** ptr);
+javacall_result javacall_media_tone_sequence_written(javacall_handle handle);
 
 /** @} */
 /** @} */
@@ -1100,7 +1140,7 @@ typedef enum {
  *          respose to JAVACALL_EVENT_MEDIA_ENCODE_COMPLETE
  *          event.
  */
-javacall_result javacall_media_encode_start(javacall_uint8* rgb888, javacall_uint8 width, javacall_uint8 height,
+javacall_result javacall_media_encode_start(javacall_uint8* rgb888, javacall_uint16 width, javacall_uint16 height,
                                       javacall_encoder_type encode, javacall_uint8 quality,
                                             javacall_uint8** result_buffer, javacall_uint32* result_buffer_len,
                                             javacall_handle* context);

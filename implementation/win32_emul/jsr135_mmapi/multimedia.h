@@ -189,7 +189,18 @@ javacall_result get_int_param(javacall_const_utf16_string ptr,
 
 extern HWND midpGetWindowHandle();
 
-/*****************************************************************************/
+/*****************************************************************************
+ *               L O C A T O R S   A N D   P R O T O C O L S
+ *****************************************************************************/
+
+#define AUDIO_CAPTURE_LOCATOR   L"capture://audio"
+#define VIDEO_CAPTURE_LOCATOR   L"capture://video"
+#define RADIO_CAPTURE_LOCATOR   L"capture://radio"
+#define DEVICE_TONE_LOCATOR     L"device://tone"
+#define DEVICE_MIDI_LOCATOR     L"device://midi"
+#define RTSP_PROTOCOL_PREFIX    L"rtsp://"
+#define HTTP_PROTOCOL_PREFIX    L"http://"
+#define HTTPS_PROTOCOL_PREFIX   L"https://"
 
 /*****************************************************************************
  *                      S T A T U S   M E S S A G E
@@ -215,29 +226,26 @@ typedef struct {
  * function pointer vector table for basic media functions
  */
 typedef struct {
-    javacall_result (*create)(int appId, int playerId, jc_fmt mediaType,
-                              const javacall_utf16_string URI,
-                              /*OUT*/ javacall_handle *pHandle);
+    javacall_result (*create)(struct _javacall_impl_player* outer_player);
+    javacall_result (*destroy)(javacall_handle handle);
+
     javacall_result (*get_format)(javacall_handle handle, jc_fmt* fmt);
     javacall_result (*get_player_controls)(javacall_handle handle, int* controls);
-    javacall_result (*close)(javacall_handle handle);
-    javacall_result (*destroy)(javacall_handle handle);
-    javacall_result (*acquire_device)(javacall_handle handle);
-    javacall_result (*release_device)(javacall_handle handle);
-    javacall_result (*realize)(javacall_handle handle, javacall_const_utf16_string mime, long mimeLength);
+
     javacall_result (*prefetch)(javacall_handle handle);
-    javacall_result (*start)(javacall_handle handle);
-    javacall_result (*stop)(javacall_handle handle);
+    javacall_result (*run)(javacall_handle handle);
     javacall_result (*pause)(javacall_handle handle);
-    javacall_result (*resume)(javacall_handle handle);
-    javacall_result (*get_java_buffer_size)(javacall_handle handle,long* java_buffer_size,long* first_data_size);
-    javacall_result (*set_whole_content_size)(javacall_handle handle, long whole_content_size);
-    javacall_result (*get_buffer_address)(javacall_handle handle,const void** buffer,long* max_size);
-    javacall_result (*do_buffering)(javacall_handle handle, const void* buffer, long *length, javacall_bool *need_more_data, long *min_data_size);
-    javacall_result (*clear_buffer)(javacall_handle handle);
-    javacall_result (*get_time)(javacall_handle handle, long* ms);
-    javacall_result (*set_time)(javacall_handle handle, long* ms);
-    javacall_result (*get_duration)(javacall_handle handle, long* ms);
+    javacall_result (*deallocate)(javacall_handle handle);
+
+    javacall_result (*stream_length)(javacall_handle handle, javacall_bool stream_len_known, javacall_int64 length);
+    javacall_result (*get_data_request)(javacall_handle handle, javacall_int64 *offset, javacall_int32 *length);
+    javacall_result (*data_ready)(javacall_handle handle, javacall_int32 length, void **data);
+    javacall_result (*data_written)(javacall_handle handle, javacall_bool *new_request);
+
+    javacall_result (*get_time)(javacall_handle handle, javacall_int32* ms);
+    javacall_result (*set_time)(javacall_handle handle, javacall_int32 ms);
+    javacall_result (*get_duration)(javacall_handle handle, javacall_int32* ms);
+
     javacall_result (*switch_to_foreground)(javacall_handle handle, int options);
     javacall_result (*switch_to_background)(javacall_handle handle, int options);
 } media_basic_interface;
@@ -270,6 +278,14 @@ typedef struct {
     javacall_result (*get_program)(javacall_handle, long channel, long* prog);
 
 } media_midi_interface;
+
+/**
+ * function pointer vector table for Tone control
+ */
+typedef struct {
+    javacall_result (*tone_alloc_buffer)(javacall_handle handle, int length, void** ptr);
+    javacall_result (*tone_sequence_written)(javacall_handle handle);
+} media_tone_interface;
 
 /**
  * function pointer vector table for MetaData control
@@ -364,6 +380,7 @@ typedef struct {
     media_video_interface*      vptrVideo;
     media_snapshot_interface*   vptrSnapshot;
     media_midi_interface*       vptrMidi;
+    media_tone_interface*       vptrTone;
     media_metadata_interface*   vptrMetaData;
     media_rate_interface*       vptrRate;
     media_tempo_interface*      vptrTempo;
@@ -372,39 +389,20 @@ typedef struct {
     media_fposition_interface*  vptrFposition;
 } media_interface;
 
-typedef struct {
+typedef struct _javacall_impl_player {
     int                        appId;
     int                        playerId;
     javacall_utf16_string      uri;
+    javacall_utf16_string      mime;
     javacall_media_format_type mediaType;
     javacall_handle            mediaHandle;
     media_interface*           mediaItfPtr;
     javacall_bool              downloadByDevice;
-} javacall_impl_player;
-
-typedef struct {
-    long                hWnd;
-    int                 isolateId;
-    int                 playerId;
-    UINT                timerId;
-    long                duration;
-    long                curTime;
-    long                offset;
-    jc_fmt              mediaType;
-    javacall_bool       isForeground;
-    TCHAR               fileName[MAX_PATH * 2];
-    long                volume;
-    BOOL                mute;
-    long                wholeContentSize;
-    void *              buffer;
-    javacall_bool       isBuffered;
-
+    javacall_int64             streamLen;
 #ifdef ENABLE_EXTRA_CAMERA_CONTROLS
-    void *              pExtraCC;
+    void*                      pExtraCC;
 #endif //ENABLE_EXTRA_CAMERA_CONTROLS
-    void *              mutex;
-
-} audio_handle;
+} javacall_impl_player;
 
 #ifdef __cplusplus
 }
