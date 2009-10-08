@@ -98,9 +98,8 @@ endif
 endif
 endif
 
-DEBUG_CFLAGS = -Zi -Gm -Fd$(JAVACALL_OUTPUT_OBJ_DIR)/javacall
-LOCAL_CFLAGS_debug   = -MDd -EHsc -D_LIB -W3 -Od $(DEBUG_CFLAGS) -D_DEBUG
-LOCAL_CFLAGS_nodebug = -MD  -EHsc -D_LIB -W3 -O2
+LOCAL_CFLAGS_debug = -MDd -Gm -EHsc -Zi -Od -D_DEBUG -D_LIB -FD -W3
+LOCAL_CFLAGS_nodebug = -MD -EHsc -O2 -D_LIB -W3
 
 CXXFLAGS+= -nologo $(LOCAL_CFLAGS_$(BUILD))
 CFLAGS+= -nologo $(LOCAL_CFLAGS_$(BUILD))
@@ -132,7 +131,9 @@ endif
 endif
 
 LOCAL_CFLAGS_$(BUILD) += $(PLATFORM_FLAGS)
-OUTPUT_OPTION=-Fo`$(call fixcygpath, $@)`
+OUTPUT_OPTION=-Fo`$(call fixcygpath, $@)` \
+              -Fp$(JAVACALL_OUTPUT_OBJ_DIR)/javacall \
+              -Fd$(JAVACALL_OUTPUT_OBJ_DIR)/javacall
 
 jc_common_dep:=$(JAVACALL_OUTPUT_OBJ_DIR)/.jc_common_dep
 $(jc_common_dep) : $(JAVACALL_INCLUDE_SOURCE_FILES_SET)
